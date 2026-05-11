@@ -117,13 +117,14 @@ function AttendancePage() {
                 <TableHead>시간</TableHead>
                 <TableHead>회원</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead>서명</TableHead>
                 <TableHead className="text-right">처리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
                     해당 날짜에 일정이 없습니다.
                   </TableCell>
                 </TableRow>
