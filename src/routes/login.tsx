@@ -178,6 +178,26 @@ function LoginPage() {
                   <Input id="signup-password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="signup-phone">전화번호 <span className="text-destructive">*</span></Label>
+                  <Input id="signup-phone" type="tel" placeholder="010-1234-5678" value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-birth">생년월일 <span className="text-destructive">*</span></Label>
+                  <Input id="signup-birth" type="date" value={signupBirth} onChange={(e) => setSignupBirth(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>성별 <span className="text-destructive">*</span></Label>
+                  <div className="flex gap-2">
+                    <Button type="button" variant={signupGender === "male" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("male")}>남성</Button>
+                    <Button type="button" variant={signupGender === "female" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("female")}>여성</Button>
+                    <Button type="button" variant={signupGender === "other" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("other")}>기타</Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-address">주소 <span className="text-muted-foreground text-xs">(선택)</span></Label>
+                  <Input id="signup-address" placeholder="주소를 입력해주세요" value={signupAddress} onChange={(e) => setSignupAddress(e.target.value)} />
+                </div>
+                <div className="space-y-2">
                   <Label>역할</Label>
                   <div className="flex gap-2">
                     <Button type="button" variant={signupRole === "member" ? "default" : "outline"} className="flex-1" onClick={() => setSignupRole("member")}>회원</Button>
