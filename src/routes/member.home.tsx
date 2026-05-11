@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Megaphone, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Megaphone, Sparkles, FileSignature } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, useTrainers } from "@/lib/store";
+import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { SignatureDialog } from "@/components/signature-dialog";
 
 export const Route = createFileRoute("/member/home")({
   component: MemberHome,
@@ -60,6 +62,15 @@ function MemberHome() {
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
   }, [schedules, myMember, todayStr]);
 
+  const pendingSignatures = useMemo(() => {
+    if (!myMember) return [] as Schedule[];
+    return schedules
+      .filter((s) => s.memberId === myMember.id && s.signatureRequested && !s.signatureUrl)
+      .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  }, [schedules, myMember]);
+
+  const [signing, setSigning] = useState<Schedule | null>(null);
+
   // 이번 달 출석 날짜 (Set)
   const attendedDays = useMemo(() => {
     if (!myMember) return new Set<number>();
@@ -109,6 +120,36 @@ function MemberHome() {
           </p>
         </div>
       </Card>
+
+      {pendingSignatures.length > 0 && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm text-primary">
+              <FileSignature className="h-4 w-4" /> 서명 요청이 왔습니다
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {pendingSignatures.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between rounded-md border bg-background p-3"
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    {s.date} {s.time}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {myTrainer?.name ?? "트레이너"} · PT 완료 확인
+                  </p>
+                </div>
+                <Button size="sm" onClick={() => setSigning(s)}>
+                  서명하기
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-2">
@@ -203,6 +244,14 @@ function MemberHome() {
           </div>
         </CardContent>
       </Card>
+
+      <SignatureDialog
+        open={!!signing}
+        onOpenChange={(o) => !o && setSigning(null)}
+        schedule={signing}
+        memberName={myMember?.name ?? ""}
+        trainerName={myTrainer?.name ?? "트레이너"}
+      />
     </div>
   );
 }

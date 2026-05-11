@@ -25,6 +25,9 @@ export type Schedule = {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   attended: boolean | null; // null=예정, true=출석, false=결석
+  signatureRequested?: boolean;
+  signatureUrl?: string | null;
+  signedAt?: string | null;
 };
 
 export type WorkoutEntry = {

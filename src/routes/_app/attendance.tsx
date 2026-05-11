@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Check, X, Trash2 } from "lucide-react";
+import { Check, X, Trash2, FileSignature, ImageIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +38,14 @@ function AttendancePage() {
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isTrainer = role === "trainer";
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const requestSignature = (id: string) => {
+    setSchedules((prev) =>
+      prev.map((x) => (x.id === id ? { ...x, signatureRequested: true } : x))
+    );
+    toast.success("회원에게 서명 요청을 보냈습니다.");
+  };
 
   const items = useMemo(() => {
     const myMemberIds = new Set(
@@ -102,13 +117,14 @@ function AttendancePage() {
                 <TableHead>시간</TableHead>
                 <TableHead>회원</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead>서명</TableHead>
                 <TableHead className="text-right">처리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
                     해당 날짜에 일정이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -131,6 +147,20 @@ function AttendancePage() {
                           {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
                         </span>
                       </TableCell>
+                      <TableCell>
+                        {s.signatureUrl ? (
+                          <button
+                            onClick={() => setPreviewUrl(s.signatureUrl ?? null)}
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/20"
+                          >
+                            <ImageIcon className="h-3 w-3" /> 서명 완료
+                          </button>
+                        ) : s.signatureRequested ? (
+                          <Badge variant="secondary">요청됨</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           size="sm"
@@ -148,6 +178,18 @@ function AttendancePage() {
                         >
                           <X className="mr-1 h-3 w-3" /> 결석
                         </Button>
+                        {s.attended === true && !s.signatureUrl && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => requestSignature(s.id)}
+                            disabled={s.signatureRequested}
+                            className="mr-2"
+                          >
+                            <FileSignature className="mr-1 h-3 w-3" />
+                            {s.signatureRequested ? "요청됨" : "서명 요청"}
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => remove(s.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -160,6 +202,21 @@ function AttendancePage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!previewUrl} onOpenChange={(o) => !o && setPreviewUrl(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>회원 서명</DialogTitle>
+          </DialogHeader>
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt="회원 서명"
+              className="w-full rounded-md border bg-white"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -290,6 +290,22 @@ function AdminWorkouts() {
               )}
             </div>
 
+            {editing?.signatureUrl ? (
+              <div className="space-y-1">
+                <Label>회원 서명</Label>
+                <img
+                  src={editing.signatureUrl}
+                  alt="회원 서명"
+                  className="w-full max-w-[320px] rounded-md border bg-white"
+                />
+                {editing.signedAt && (
+                  <p className="text-[11px] text-muted-foreground">
+                    서명일: {new Date(editing.signedAt).toLocaleString("ko-KR")}
+                  </p>
+                )}
+              </div>
+            ) : null}
+
             {editingLog?.memberMemos.length ? (
               <div className="space-y-1">
                 <Label>회원 메모 (조회 전용)</Label>
