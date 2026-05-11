@@ -45,13 +45,19 @@ export function SignatureDialog({ open, onOpenChange, schedule, memberName, trai
     try {
       const dataUrl = padRef.current?.toDataURL() ?? "";
       const blob = dataUrlToBlob(dataUrl);
-      const path = `${schedule.id}/${Date.now()}.png`;
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) throw new Error("Not authenticated");
+      const path = `${uid}/${schedule.id}/${Date.now()}.png`;
       const { error: upErr } = await supabase.storage
         .from("signatures")
         .upload(path, blob, { contentType: "image/png", upsert: true });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("signatures").getPublicUrl(path);
-      const url = pub.publicUrl;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("signatures")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signErr) throw signErr;
+      const url = signed.signedUrl;
 
       setSchedules((prev) =>
         prev.map((s) =>
