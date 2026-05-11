@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as MemberIndexRouteImport } from './routes/member.index'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as MemberWorkoutRouteImport } from './routes/member.workout'
+import { Route as MemberRecordsRouteImport } from './routes/member.records'
 import { Route as MemberHomeRouteImport } from './routes/member.home'
 import { Route as MemberBookingRouteImport } from './routes/member.booking'
 import { Route as AppMembersRouteImport } from './routes/_app/members'
@@ -52,6 +53,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const MemberWorkoutRoute = MemberWorkoutRouteImport.update({
   id: '/workout',
   path: '/workout',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberRecordsRoute = MemberRecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
   getParentRoute: () => MemberRoute,
 } as any)
 const MemberHomeRoute = MemberHomeRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/members': typeof AppMembersRoute
   '/member/booking': typeof MemberBookingRoute
   '/member/home': typeof MemberHomeRoute
+  '/member/records': typeof MemberRecordsRoute
   '/member/workout': typeof MemberWorkoutRoute
   '/member/': typeof MemberIndexRoute
   '/admin/stats': typeof AppAdminStatsRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/members': typeof AppMembersRoute
   '/member/booking': typeof MemberBookingRoute
   '/member/home': typeof MemberHomeRoute
+  '/member/records': typeof MemberRecordsRoute
   '/member/workout': typeof MemberWorkoutRoute
   '/': typeof AppIndexRoute
   '/member': typeof MemberIndexRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/_app/members': typeof AppMembersRoute
   '/member/booking': typeof MemberBookingRoute
   '/member/home': typeof MemberHomeRoute
+  '/member/records': typeof MemberRecordsRoute
   '/member/workout': typeof MemberWorkoutRoute
   '/_app/': typeof AppIndexRoute
   '/member/': typeof MemberIndexRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/members'
     | '/member/booking'
     | '/member/home'
+    | '/member/records'
     | '/member/workout'
     | '/member/'
     | '/admin/stats'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/members'
     | '/member/booking'
     | '/member/home'
+    | '/member/records'
     | '/member/workout'
     | '/'
     | '/member'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/_app/members'
     | '/member/booking'
     | '/member/home'
+    | '/member/records'
     | '/member/workout'
     | '/_app/'
     | '/member/'
@@ -249,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/workout'
       fullPath: '/member/workout'
       preLoaderRoute: typeof MemberWorkoutRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/records': {
+      id: '/member/records'
+      path: '/records'
+      fullPath: '/member/records'
+      preLoaderRoute: typeof MemberRecordsRouteImport
       parentRoute: typeof MemberRoute
     }
     '/member/home': {
@@ -363,6 +382,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 interface MemberRouteChildren {
   MemberBookingRoute: typeof MemberBookingRoute
   MemberHomeRoute: typeof MemberHomeRoute
+  MemberRecordsRoute: typeof MemberRecordsRoute
   MemberWorkoutRoute: typeof MemberWorkoutRoute
   MemberIndexRoute: typeof MemberIndexRoute
 }
@@ -370,6 +390,7 @@ interface MemberRouteChildren {
 const MemberRouteChildren: MemberRouteChildren = {
   MemberBookingRoute: MemberBookingRoute,
   MemberHomeRoute: MemberHomeRoute,
+  MemberRecordsRoute: MemberRecordsRoute,
   MemberWorkoutRoute: MemberWorkoutRoute,
   MemberIndexRoute: MemberIndexRoute,
 }
