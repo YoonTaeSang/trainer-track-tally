@@ -74,14 +74,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "H-lab PT studio" },
+      { name: "description", content: "PT Member Hub is a web application for managing PT studio members, schedules, and operations." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "H-lab PT studio" },
+      { property: "og:description", content: "PT Member Hub is a web application for managing PT studio members, schedules, and operations." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "H-lab PT studio" },
+      { name: "twitter:description", content: "PT Member Hub is a web application for managing PT studio members, schedules, and operations." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6519fa0-acc7-4228-ab71-722f80a39703/id-preview-af8ee663--3d683393-dbac-4827-9e8e-0b48bb3bd625.lovable.app-1778542143239.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6519fa0-acc7-4228-ab71-722f80a39703/id-preview-af8ee663--3d683393-dbac-4827-9e8e-0b48bb3bd625.lovable.app-1778542143239.png" },
     ],
     links: [
       {
