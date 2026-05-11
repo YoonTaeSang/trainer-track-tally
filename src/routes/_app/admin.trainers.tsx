@@ -45,11 +45,13 @@ const empty: Omit<Trainer, "id"> = { name: "", phone: "", memo: "" };
 
 function TrainersPage() {
   const navigate = useNavigate();
-  const { allowed } = useRoleGuard(["admin"]);
-  if (!allowed) return null;
+  const { allowed, loading: roleLoading } = useRoleGuard(["admin"]);
   const [trainers, setTrainers] = useTrainers();
   const [members] = useMembers();
   const [schedules] = useSchedules();
+  const trainersStatus = useTableStatus("trainers");
+  const membersStatus = useTableStatus("members");
+  const schedulesStatus = useTableStatus("schedules");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Trainer | null>(null);
   const [form, setForm] = useState<Omit<Trainer, "id">>(empty);
