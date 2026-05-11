@@ -1,0 +1,31 @@
+export const BODY_PARTS = ["가슴", "등", "어깨", "하체", "복근", "팔"] as const;
+export type BodyPart = (typeof BODY_PARTS)[number];
+
+export const DIFFICULTIES = ["초급", "중급", "고급"] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
+
+export function difficultyVariant(d: string): "secondary" | "default" | "destructive" {
+  if (d === "초급") return "secondary";
+  if (d === "중급") return "default";
+  return "destructive";
+}
+
+export function getYoutubeEmbedUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) {
+      return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return `https://www.youtube.com/embed/${v}`;
+      const parts = u.pathname.split("/");
+      const idx = parts.indexOf("embed");
+      if (idx >= 0 && parts[idx + 1]) return `https://www.youtube.com/embed/${parts[idx + 1]}`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
