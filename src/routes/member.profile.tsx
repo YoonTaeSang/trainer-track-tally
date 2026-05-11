@@ -18,12 +18,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   LogOut,
   User as UserIcon,
   KeyRound,
   Plus,
   Trash2,
   Ruler,
+  UserX,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useTrainers } from "@/lib/store";
