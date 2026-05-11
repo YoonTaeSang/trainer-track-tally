@@ -44,11 +44,20 @@ type ExerciseBest = { weight: number; reps: number };
 function MemberDetailPage() {
   const { memberId } = Route.useParams();
   const navigate = useNavigate();
-  const [members] = useMembers();
+  const [members, setMembers] = useMembers();
   const [schedules] = useSchedules();
   const [logs, setLogs] = useWorkoutLogs();
   const { role } = useRole();
   const canEdit = role === "admin" || role === "trainer";
+  const isAdmin = role === "admin";
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+
+  const toggleStatus = (next: "active" | "inactive") => {
+    if (!members.find((m) => m.id === memberId)) return;
+    setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, status: next } : m)));
+    toast.success(next === "inactive" ? "회원이 비활성화되었습니다." : "회원이 다시 활성화되었습니다.");
+    setDeactivateOpen(false);
+  };
 
   const member = members.find((m) => m.id === memberId);
 
