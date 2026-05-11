@@ -203,15 +203,25 @@ async function refetch<L>(table: string, mapper: Mapper<L>) {
   const c = getCache<L>(table);
   if (c.loading) return;
   c.loading = true;
-  const { data, error } = await (supabase as any).from(table).select("*");
-  c.loading = false;
-  if (error) {
-    console.error(`[store:${table}] refetch error`, error);
-    return;
+  c.error = null;
+  notifyStatus(c);
+  try {
+    const { data, error } = await (supabase as any).from(table).select("*");
+    if (error) {
+      console.error(`[store:${table}] refetch error`, error);
+      c.error = new Error(error.message ?? `Failed to load ${table}`);
+      return;
+    }
+    c.data = (data ?? []).map(mapper.fromRow);
+    c.loaded = true;
+    notify(c);
+  } catch (e: any) {
+    console.error(`[store:${table}] refetch threw`, e);
+    c.error = e instanceof Error ? e : new Error(String(e));
+  } finally {
+    c.loading = false;
+    notifyStatus(c);
   }
-  c.data = (data ?? []).map(mapper.fromRow);
-  c.loaded = true;
-  notify(c);
 }
 
 function ensureSubscription<L>(table: string, mapper: Mapper<L>) {
