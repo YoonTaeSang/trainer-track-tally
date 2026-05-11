@@ -88,6 +88,19 @@ function MemberProfile() {
   const [pwOpen, setPwOpen] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [newPw2, setNewPw2] = useState("");
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+
+  const withdraw = async () => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("members")
+      .update({ status: "inactive" })
+      .eq("user_id", user.id);
+    if (error) return toast.error(error.message);
+    toast.success("회원 탈퇴가 완료되었습니다");
+    await signOut();
+    navigate({ to: "/login" });
+  };
 
   // Profile
   useEffect(() => {
