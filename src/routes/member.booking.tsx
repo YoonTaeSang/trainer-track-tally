@@ -14,7 +14,7 @@ import {
 import { CheckCircle2, Clock, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, useTrainers, uid } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, uid } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingRequestButtons } from "@/components/booking-request-button";
 
@@ -50,7 +50,7 @@ function BookingPage() {
   const { user } = useAuth();
   const [members, setMembers] = useMembers();
   const [schedules, setSchedules] = useSchedules();
-  const [trainers] = useTrainers();
+  const [trainers] = usePublicTrainers();
   const [profileName, setProfileName] = useState("");
   const [requests, setRequests] = useState<RequestRow[]>([]);
 

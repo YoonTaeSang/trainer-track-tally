@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useTrainers } from "@/lib/store";
+import { useMembers, usePublicTrainers } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatPanel } from "@/components/chat-panel";
 import { ArrowLeft } from "lucide-react";
@@ -18,7 +18,7 @@ type Partner = { id: string; name: string; role: "trainer" | "admin" };
 function MemberMessages() {
   const { user } = useAuth();
   const [members] = useMembers();
-  const [trainers] = useTrainers();
+  const [trainers] = usePublicTrainers();
   const [profileName, setProfileName] = useState("");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [active, setActive] = useState<Partner | null>(null);

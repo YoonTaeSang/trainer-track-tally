@@ -37,7 +37,7 @@ import {
   UserX,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useTrainers } from "@/lib/store";
+import { useMembers, usePublicTrainers } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -70,7 +70,7 @@ function MemberProfile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [members] = useMembers();
-  const [trainers] = useTrainers();
+  const [trainers] = usePublicTrainers();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
