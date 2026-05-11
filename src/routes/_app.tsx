@@ -1,18 +1,38 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { seedDemoData } from "@/lib/store";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
 function AppLayout() {
+  const { session, loading } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     seedDemoData();
   }, []);
+
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate({ to: "/auth" });
+    }
+  }, [loading, session, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        로딩 중...
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   return (
     <SidebarProvider>

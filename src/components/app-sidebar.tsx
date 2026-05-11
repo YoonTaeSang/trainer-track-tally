@@ -1,8 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Calendar, ClipboardCheck, Dumbbell } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, Users, Calendar, ClipboardCheck, Dumbbell, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -11,6 +12,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 const items = [
   { title: "대시보드", url: "/", icon: LayoutDashboard },
@@ -21,6 +24,14 @@ const items = [
 
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("로그아웃되었습니다");
+    navigate({ to: "/auth" });
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -54,6 +65,15 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t">
+        <div className="flex flex-col gap-2 p-2">
+          <span className="truncate px-2 text-xs text-muted-foreground">{user?.email}</span>
+          <SidebarMenuButton onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            <span>로그아웃</span>
+          </SidebarMenuButton>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
