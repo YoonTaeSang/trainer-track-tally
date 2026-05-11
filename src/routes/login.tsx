@@ -85,6 +85,10 @@ function LoginPage() {
       nameSchema.parse(signupName);
       emailSchema.parse(signupEmail);
       passwordSchema.parse(signupPassword);
+      phoneSchema.parse(signupPhone);
+      birthSchema.parse(signupBirth);
+      genderSchema.parse(signupGender);
+      addressSchema.parse(signupAddress);
     } catch (err) {
       if (err instanceof z.ZodError) toast.error(err.errors[0].message);
       return;
@@ -95,7 +99,14 @@ function LoginPage() {
       password: signupPassword,
       options: {
         emailRedirectTo: `${window.location.origin}/login`,
-        data: { name: signupName, role: signupRole },
+        data: {
+          name: signupName,
+          role: signupRole,
+          phone: signupPhone,
+          birth_date: signupBirth,
+          gender: signupGender,
+          address: signupAddress,
+        },
       },
     });
     setLoading(false);
