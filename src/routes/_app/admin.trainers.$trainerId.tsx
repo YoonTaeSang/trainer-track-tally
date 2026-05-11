@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTrainers, useMembers, useSchedules } from "@/lib/store";
+import { useRoleGuard } from "@/hooks/use-role-guard";
 
 export const Route = createFileRoute("/_app/admin/trainers/$trainerId")({
   component: TrainerDetailPage,
@@ -34,9 +35,12 @@ function startOfWeek(d: Date) {
 function TrainerDetailPage() {
   const { trainerId } = Route.useParams();
   const navigate = useNavigate();
+  const { allowed } = useRoleGuard(["admin"]);
   const [trainers] = useTrainers();
   const [members] = useMembers();
   const [schedules] = useSchedules();
+
+  if (!allowed) return null;
 
   const trainer = trainers.find((t) => t.id === trainerId);
   const myMembers = useMemo(

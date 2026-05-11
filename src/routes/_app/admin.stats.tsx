@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useMembers, useSchedules, type Member } from "@/lib/store";
+import { useRoleGuard } from "@/hooks/use-role-guard";
 
 export const Route = createFileRoute("/_app/admin/stats")({
   component: StatsPage,
@@ -31,10 +32,13 @@ export const Route = createFileRoute("/_app/admin/stats")({
 });
 
 function StatsPage() {
+  const { allowed } = useRoleGuard(["admin"]);
   const [members, setMembers] = useMembers();
   const [schedules] = useSchedules();
   const [chargeFor, setChargeFor] = useState<Member | null>(null);
   const [chargeAmount, setChargeAmount] = useState(10);
+
+  if (!allowed) return null;
 
   const today = new Date();
 

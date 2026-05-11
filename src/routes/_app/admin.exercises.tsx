@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { BODY_PARTS, DIFFICULTIES, difficultyVariant } from "@/lib/exercises";
+import { useRole } from "@/hooks/use-role";
 
 export const Route = createFileRoute("/_app/admin/exercises")({
   component: AdminExercisesPage,
@@ -59,6 +60,8 @@ const empty = {
 };
 
 function AdminExercisesPage() {
+  const { role } = useRole();
+  const isAdmin = role === "admin";
   const [items, setItems] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -145,6 +148,7 @@ function AdminExercisesPage() {
             회원에게 제공되는 운동 정보를 관리합니다.
           </p>
         </div>
+        {isAdmin && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button onClick={openNew}>
@@ -225,6 +229,7 @@ function AdminExercisesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card>
@@ -272,12 +277,18 @@ function AdminExercisesPage() {
                       {e.youtube_url ?? "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(e)} title="수정">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(e.id)} title="삭제">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin ? (
+                        <>
+                          <Button size="icon" variant="ghost" onClick={() => openEdit(e)} title="수정">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => remove(e.id)} title="삭제">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">조회 전용</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

@@ -33,6 +33,8 @@ import {
   type WorkoutEntry,
 } from "@/lib/store";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/use-role";
+import { useCurrentTrainer } from "@/hooks/use-current-trainer";
 
 export const Route = createFileRoute("/_app/admin/workouts")({
   component: AdminWorkouts,
@@ -40,20 +42,32 @@ export const Route = createFileRoute("/_app/admin/workouts")({
 });
 
 function AdminWorkouts() {
-  const [members] = useMembers();
+  const [allMembers] = useMembers();
   const [schedules] = useSchedules();
   const [workoutLogs, setWorkoutLogs] = useWorkoutLogs();
+  const { role } = useRole();
+  const { trainerId: currentTrainerId } = useCurrentTrainer();
+  const isTrainer = role === "trainer";
+  const members = useMemo(
+    () =>
+      isTrainer && currentTrainerId
+        ? allMembers.filter((m) => m.trainerId === currentTrainerId)
+        : allMembers,
+    [allMembers, isTrainer, currentTrainerId]
+  );
+  const myMemberIds = useMemo(() => new Set(members.map((m) => m.id)), [members]);
   const [memberFilter, setMemberFilter] = useState<string>("all");
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
+    const scoped = schedules.filter((s) => myMemberIds.has(s.memberId));
     const list = memberFilter === "all"
-      ? schedules
-      : schedules.filter((s) => s.memberId === memberFilter);
+      ? scoped
+      : scoped.filter((s) => s.memberId === memberFilter);
     return [...list].sort((a, b) =>
       (b.date + b.time).localeCompare(a.date + a.time)
     );
-  }, [schedules, memberFilter]);
+  }, [schedules, memberFilter, myMemberIds]);
 
   const logBySchedule = useMemo(() => {
     const m = new Map<string, (typeof workoutLogs)[number]>();
