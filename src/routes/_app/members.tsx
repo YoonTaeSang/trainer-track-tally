@@ -224,6 +224,9 @@ function MembersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button size="icon" variant="ghost" onClick={() => openCharge(m)} title="세션 충전">
+                          <BatteryCharging className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => openSchedule(m)} title="일정 추가">
                           <CalendarPlus className="h-4 w-4" />
                         </Button>
