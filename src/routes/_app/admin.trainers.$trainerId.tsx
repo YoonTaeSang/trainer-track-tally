@@ -40,6 +40,8 @@ function TrainerDetailPage() {
   const [members] = useMembers();
   const [schedules] = useSchedules();
 
+  if (!allowed) return null;
+
   const trainer = trainers.find((t) => t.id === trainerId);
   const myMembers = useMemo(
     () => members.filter((m) => m.trainerId === trainerId),
