@@ -27,15 +27,21 @@ export const Route = createFileRoute("/_app/attendance")({
 function AttendancePage() {
   const [members, setMembers] = useMembers();
   const [schedules, setSchedules] = useSchedules();
+  const { role } = useRole();
+  const { trainerId: currentTrainerId } = useCurrentTrainer();
+  const isTrainer = role === "trainer";
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
-  const items = useMemo(
-    () =>
-      schedules
-        .filter((s) => s.date === date)
-        .sort((a, b) => a.time.localeCompare(b.time)),
-    [schedules, date]
-  );
+  const items = useMemo(() => {
+    const myMemberIds = new Set(
+      isTrainer && currentTrainerId
+        ? members.filter((m) => m.trainerId === currentTrainerId).map((m) => m.id)
+        : members.map((m) => m.id)
+    );
+    return schedules
+      .filter((s) => s.date === date && myMemberIds.has(s.memberId))
+      .sort((a, b) => a.time.localeCompare(b.time));
+  }, [schedules, date, members, isTrainer, currentTrainerId]);
 
   const mark = (id: string, attended: boolean) => {
     const s = schedules.find((x) => x.id === id);
