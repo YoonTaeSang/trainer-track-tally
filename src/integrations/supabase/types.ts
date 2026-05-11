@@ -213,6 +213,7 @@ export type Database = {
       members: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           joined_at: string
           memo: string
@@ -226,6 +227,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
           joined_at?: string
           memo?: string
@@ -239,6 +241,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           joined_at?: string
           memo?: string
@@ -335,6 +338,7 @@ export type Database = {
           address: string | null
           birth_date: string | null
           created_at: string
+          email: string | null
           gender: string | null
           id: string
           name: string
@@ -344,6 +348,7 @@ export type Database = {
           address?: string | null
           birth_date?: string | null
           created_at?: string
+          email?: string | null
           gender?: string | null
           id: string
           name?: string
@@ -353,6 +358,7 @@ export type Database = {
           address?: string | null
           birth_date?: string | null
           created_at?: string
+          email?: string | null
           gender?: string | null
           id?: string
           name?: string
