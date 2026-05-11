@@ -43,16 +43,6 @@ function MemberLayout() {
     }
   }, [role, roleLoading, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setProfileName(data?.name ?? ""));
-  }, [user]);
-
   if (!DEV_BYPASS && (authLoading || roleLoading || !user)) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
