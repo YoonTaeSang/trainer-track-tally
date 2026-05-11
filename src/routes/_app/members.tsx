@@ -146,9 +146,9 @@ function MembersPage() {
     toast.success("회원이 삭제되었습니다.");
   };
 
-  const filtered = members.filter(
-    (m) => m.name.includes(search) || m.phone.includes(search)
-  );
+  const filtered = members
+    .filter((m) => (isTrainer && currentTrainerId ? m.trainerId === currentTrainerId : true))
+    .filter((m) => m.name.includes(search) || m.phone.includes(search));
 
   return (
     <div className="space-y-6">
