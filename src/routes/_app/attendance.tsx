@@ -147,6 +147,20 @@ function AttendancePage() {
                           {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
                         </span>
                       </TableCell>
+                      <TableCell>
+                        {s.signatureUrl ? (
+                          <button
+                            onClick={() => setPreviewUrl(s.signatureUrl ?? null)}
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/20"
+                          >
+                            <ImageIcon className="h-3 w-3" /> 서명 완료
+                          </button>
+                        ) : s.signatureRequested ? (
+                          <Badge variant="secondary">요청됨</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           size="sm"
@@ -164,6 +178,18 @@ function AttendancePage() {
                         >
                           <X className="mr-1 h-3 w-3" /> 결석
                         </Button>
+                        {s.attended === true && !s.signatureUrl && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => requestSignature(s.id)}
+                            disabled={s.signatureRequested}
+                            className="mr-2"
+                          >
+                            <FileSignature className="mr-1 h-3 w-3" />
+                            {s.signatureRequested ? "요청됨" : "서명 요청"}
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => remove(s.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
