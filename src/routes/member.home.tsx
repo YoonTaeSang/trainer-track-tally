@@ -302,3 +302,43 @@ function MemberHome() {
     </div>
   );
 }
+
+function NoticeList({
+  items,
+  fallbackName,
+  emptyText,
+}: {
+  items: NoticeRow[];
+  fallbackName: string;
+  emptyText: string;
+}) {
+  if (items.length === 0) {
+    return <p className="py-4 text-center text-xs text-muted-foreground">{emptyText}</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {items.slice(0, 5).map((n) => (
+        <li
+          key={n.id}
+          className={`flex gap-3 rounded-md border p-3 ${!n.read ? "border-primary/40 bg-primary/5" : ""}`}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-sm font-medium">{n.title || fallbackName}</p>
+              {!n.read && (
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">{n.body}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {new Date(n.created_at).toLocaleString("ko-KR")}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
