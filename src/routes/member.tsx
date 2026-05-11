@@ -134,7 +134,7 @@ function MemberLayout() {
           <button
             onClick={async () => {
               await supabase.auth.signOut();
-              navigate({ to: "/login" });
+              window.location.href = "/login";
             }}
             className="w-full rounded-md border px-3 py-2 text-sm hover:bg-muted"
           >

@@ -19,6 +19,10 @@ export const Route = createFileRoute("/login")({
 const emailSchema = z.string().trim().email("올바른 이메일을 입력해주세요").max(255);
 const passwordSchema = z.string().min(6, "비밀번호는 6자 이상이어야 합니다").max(72);
 const nameSchema = z.string().trim().min(1, "이름을 입력해주세요").max(50);
+const phoneSchema = z.string().trim().min(1, "전화번호를 입력해주세요").max(20);
+const birthSchema = z.string().trim().min(1, "생년월일을 입력해주세요");
+const genderSchema = z.enum(["male", "female", "other"], { errorMap: () => ({ message: "성별을 선택해주세요" }) });
+const addressSchema = z.string().trim().max(200).optional();
 
 async function redirectByRole(userId: string, navigate: ReturnType<typeof useNavigate>) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -40,6 +44,10 @@ function LoginPage() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
+  const [signupBirth, setSignupBirth] = useState("");
+  const [signupGender, setSignupGender] = useState<"male" | "female" | "other" | "">("");
+  const [signupAddress, setSignupAddress] = useState("");
   const [signupRole, setSignupRole] = useState<"trainer" | "member">("member");
 
   useEffect(() => {
@@ -77,6 +85,10 @@ function LoginPage() {
       nameSchema.parse(signupName);
       emailSchema.parse(signupEmail);
       passwordSchema.parse(signupPassword);
+      phoneSchema.parse(signupPhone);
+      birthSchema.parse(signupBirth);
+      genderSchema.parse(signupGender);
+      addressSchema.parse(signupAddress);
     } catch (err) {
       if (err instanceof z.ZodError) toast.error(err.errors[0].message);
       return;
@@ -87,7 +99,14 @@ function LoginPage() {
       password: signupPassword,
       options: {
         emailRedirectTo: `${window.location.origin}/login`,
-        data: { name: signupName, role: signupRole },
+        data: {
+          name: signupName,
+          role: signupRole,
+          phone: signupPhone,
+          birth_date: signupBirth,
+          gender: signupGender,
+          address: signupAddress,
+        },
       },
     });
     setLoading(false);
@@ -157,6 +176,26 @@ function LoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">비밀번호 (6자 이상)</Label>
                   <Input id="signup-password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">전화번호 <span className="text-destructive">*</span></Label>
+                  <Input id="signup-phone" type="tel" placeholder="010-1234-5678" value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-birth">생년월일 <span className="text-destructive">*</span></Label>
+                  <Input id="signup-birth" type="date" value={signupBirth} onChange={(e) => setSignupBirth(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>성별 <span className="text-destructive">*</span></Label>
+                  <div className="flex gap-2">
+                    <Button type="button" variant={signupGender === "male" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("male")}>남성</Button>
+                    <Button type="button" variant={signupGender === "female" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("female")}>여성</Button>
+                    <Button type="button" variant={signupGender === "other" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("other")}>기타</Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-address">주소 <span className="text-muted-foreground text-xs">(선택)</span></Label>
+                  <Input id="signup-address" placeholder="주소를 입력해주세요" value={signupAddress} onChange={(e) => setSignupAddress(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>역할</Label>
