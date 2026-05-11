@@ -304,7 +304,20 @@ export function useWorkoutLogs() {
   return useSupabaseTable<WorkoutLog>("workout_logs", mapWorkoutLog);
 }
 
+const ALL_TABLES: Array<[string, Mapper<any>]> = [
+  ["trainers", mapTrainer],
+  ["members", mapMember],
+  ["schedules", mapSchedule],
+  ["workout_logs", mapWorkoutLog],
+];
+
+/** Force-refetch every store-managed table from Supabase. */
+export function refetchAllTables() {
+  ALL_TABLES.forEach(([t, m]) => refetch(t, m));
+}
+
 // Seed is now done by the SQL migration. Keep no-op for back-compat.
 export function seedDemoData() {
   /* handled in DB migration */
 }
+
