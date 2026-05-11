@@ -26,6 +26,7 @@ import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as MemberExercisesExerciseIdRouteImport } from './routes/member.exercises.$exerciseId'
 import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
 import { Route as AppAdminStatsRouteImport } from './routes/_app/admin.stats'
+import { Route as AppAdminExercisesRouteImport } from './routes/_app/admin.exercises'
 import { Route as AppAdminTrainersTrainerIdRouteImport } from './routes/_app/admin.trainers.$trainerId'
 
 const MemberRoute = MemberRouteImport.update({
@@ -113,6 +114,11 @@ const AppAdminStatsRoute = AppAdminStatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminExercisesRoute = AppAdminExercisesRouteImport.update({
+  id: '/exercises',
+  path: '/exercises',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminTrainersTrainerIdRoute =
   AppAdminTrainersTrainerIdRouteImport.update({
     id: '/$trainerId',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
   '/member/': typeof MemberIndexRoute
+  '/admin/exercises': typeof AppAdminExercisesRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/member/exercises/$exerciseId': typeof MemberExercisesExerciseIdRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/member/records': typeof MemberRecordsRoute
   '/': typeof AppIndexRoute
   '/member': typeof MemberIndexRoute
+  '/admin/exercises': typeof AppAdminExercisesRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/member/exercises/$exerciseId': typeof MemberExercisesExerciseIdRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/member/records': typeof MemberRecordsRoute
   '/_app/': typeof AppIndexRoute
   '/member/': typeof MemberIndexRoute
+  '/_app/admin/exercises': typeof AppAdminExercisesRoute
   '/_app/admin/stats': typeof AppAdminStatsRoute
   '/_app/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/member/exercises/$exerciseId': typeof MemberExercisesExerciseIdRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/member/profile'
     | '/member/records'
     | '/member/'
+    | '/admin/exercises'
     | '/admin/stats'
     | '/admin/trainers'
     | '/member/exercises/$exerciseId'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/member/records'
     | '/'
     | '/member'
+    | '/admin/exercises'
     | '/admin/stats'
     | '/admin/trainers'
     | '/member/exercises/$exerciseId'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/member/records'
     | '/_app/'
     | '/member/'
+    | '/_app/admin/exercises'
     | '/_app/admin/stats'
     | '/_app/admin/trainers'
     | '/member/exercises/$exerciseId'
@@ -365,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminStatsRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/exercises': {
+      id: '/_app/admin/exercises'
+      path: '/exercises'
+      fullPath: '/admin/exercises'
+      preLoaderRoute: typeof AppAdminExercisesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/trainers/$trainerId': {
       id: '/_app/admin/trainers/$trainerId'
       path: '/$trainerId'
@@ -387,11 +406,13 @@ const AppAdminTrainersRouteWithChildren =
   AppAdminTrainersRoute._addFileChildren(AppAdminTrainersRouteChildren)
 
 interface AppAdminRouteChildren {
+  AppAdminExercisesRoute: typeof AppAdminExercisesRoute
   AppAdminStatsRoute: typeof AppAdminStatsRoute
   AppAdminTrainersRoute: typeof AppAdminTrainersRouteWithChildren
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminExercisesRoute: AppAdminExercisesRoute,
   AppAdminStatsRoute: AppAdminStatsRoute,
   AppAdminTrainersRoute: AppAdminTrainersRouteWithChildren,
 }
