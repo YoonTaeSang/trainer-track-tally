@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, CalendarPlus, BatteryCharging } from "lucide-react";
+import { Plus, Trash2, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +58,7 @@ const empty: Omit<Member, "id"> = {
   totalSessions: 0,
   usedSessions: 0,
   memo: "",
+  status: "active",
 };
 
 function MembersPage() {
