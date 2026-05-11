@@ -105,6 +105,46 @@ function MemberLayout() {
     );
   }
 
+  if (!DEV_BYPASS && memberStatus && memberStatus !== "active") {
+    const labels: Record<string, { title: string; desc: string }> = {
+      pending: {
+        title: "가입 승인 대기중입니다",
+        desc: "관리자 승인 후 이용 가능합니다. 관리자에게 문의하세요.",
+      },
+      inactive: {
+        title: "비활성화된 계정입니다",
+        desc: "계정이 비활성화되어 있습니다. 관리자에게 문의하세요.",
+      },
+      rejected: {
+        title: "가입이 거절되었습니다",
+        desc: "관리자에게 문의하세요.",
+      },
+    };
+    const info = labels[memberStatus] ?? labels.pending;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+        <div className="w-full max-w-sm space-y-4 rounded-xl border bg-background p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Dumbbell className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-base font-semibold">{info.title}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{info.desc}</p>
+          </div>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/login" });
+            }}
+            className="w-full rounded-md border px-3 py-2 text-sm hover:bg-muted"
+          >
+            로그아웃
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto flex min-h-screen max-w-[430px] flex-col bg-background shadow-xl">
