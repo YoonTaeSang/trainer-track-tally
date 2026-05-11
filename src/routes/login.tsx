@@ -197,13 +197,6 @@ function LoginPage() {
                   <Label htmlFor="signup-address">주소 <span className="text-muted-foreground text-xs">(선택)</span></Label>
                   <Input id="signup-address" placeholder="주소를 입력해주세요" value={signupAddress} onChange={(e) => setSignupAddress(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label>역할</Label>
-                  <div className="flex gap-2">
-                    <Button type="button" variant={signupRole === "member" ? "default" : "outline"} className="flex-1" onClick={() => setSignupRole("member")}>회원</Button>
-                    <Button type="button" variant={signupRole === "trainer" ? "default" : "outline"} className="flex-1" onClick={() => setSignupRole("trainer")}>트레이너</Button>
-                  </div>
-                </div>
                 <Button type="submit" className="w-full" disabled={loading}>회원가입</Button>
               </form>
             </TabsContent>
