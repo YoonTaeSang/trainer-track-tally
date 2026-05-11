@@ -16,11 +16,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 const items = [
-  { title: "대시보드", url: "/", icon: LayoutDashboard },
+  { title: "대시보드", url: "/admin", icon: LayoutDashboard },
   { title: "회원 관리", url: "/members", icon: Users },
   { title: "일정 캘린더", url: "/calendar", icon: Calendar },
   { title: "출석 체크", url: "/attendance", icon: ClipboardCheck },
-];
+] as const;
 
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
@@ -30,7 +30,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     await signOut();
     toast.success("로그아웃되었습니다");
-    navigate({ to: "/auth" });
+    navigate({ to: "/login" });
   };
 
   return (

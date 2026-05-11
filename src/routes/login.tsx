@@ -11,8 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Dumbbell } from "lucide-react";
 
-export const Route = createFileRoute("/auth")({
-  component: AuthPage,
+export const Route = createFileRoute("/login")({
+  component: LoginPage,
   head: () => ({ meta: [{ title: "로그인 | PT 회원관리" }] }),
 });
 
@@ -20,15 +20,23 @@ const emailSchema = z.string().trim().email("올바른 이메일을 입력해주
 const passwordSchema = z.string().min(6, "비밀번호는 6자 이상이어야 합니다").max(72);
 const nameSchema = z.string().trim().min(1, "이름을 입력해주세요").max(50);
 
-function AuthPage() {
+async function redirectByRole(userId: string, navigate: ReturnType<typeof useNavigate>) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const roles = (data ?? []).map((r) => r.role as string);
+  if (roles.includes("admin") || roles.includes("trainer")) {
+    navigate({ to: "/admin" });
+  } else {
+    navigate({ to: "/member" });
+  }
+}
+
+function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // signup state
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
@@ -36,7 +44,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: "/" });
+      if (session) redirectByRole(session.user.id, navigate);
     });
   }, [navigate]);
 
@@ -50,7 +58,7 @@ function AuthPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: loginPassword,
     });
@@ -60,7 +68,7 @@ function AuthPage() {
       return;
     }
     toast.success("로그인되었습니다");
-    navigate({ to: "/" });
+    if (data.user) await redirectByRole(data.user.id, navigate);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -78,7 +86,7 @@ function AuthPage() {
       email: signupEmail,
       password: signupPassword,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/login`,
         data: { name: signupName, role: signupRole },
       },
     });
@@ -93,7 +101,7 @@ function AuthPage() {
   const handleGoogle = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/login`,
     });
     if (result.error) {
       setLoading(false);
@@ -101,7 +109,8 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/" });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) await redirectByRole(session.user.id, navigate);
   };
 
   return (
@@ -171,7 +180,7 @@ function AuthPage() {
           </Button>
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            <Link to="/" className="underline">홈으로</Link>
+            <Link to="/login" className="underline">홈으로</Link>
           </p>
         </CardContent>
       </Card>
