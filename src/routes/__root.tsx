@@ -117,6 +117,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
+        <DevModeSwitcher />
       </AuthProvider>
     </QueryClientProvider>
   );
