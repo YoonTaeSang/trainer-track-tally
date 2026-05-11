@@ -22,7 +22,7 @@ import { Route as MemberBookingRouteImport } from './routes/member.booking'
 import { Route as AppMembersRouteImport } from './routes/_app/members'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
-import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as MemberExercisesExerciseIdRouteImport } from './routes/member.exercises.$exerciseId'
 import { Route as AppAdminWorkoutsRouteImport } from './routes/_app/admin.workouts'
 import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
@@ -95,9 +95,9 @@ const AppAttendanceRoute = AppAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => AppRoute,
 } as any)
 const MemberExercisesExerciseIdRoute =
@@ -107,29 +107,29 @@ const MemberExercisesExerciseIdRoute =
     getParentRoute: () => MemberExercisesRoute,
   } as any)
 const AppAdminWorkoutsRoute = AppAdminWorkoutsRouteImport.update({
-  id: '/workouts',
-  path: '/workouts',
-  getParentRoute: () => AppAdminRoute,
+  id: '/admin/workouts',
+  path: '/admin/workouts',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAdminTrainersRoute = AppAdminTrainersRouteImport.update({
-  id: '/trainers',
-  path: '/trainers',
-  getParentRoute: () => AppAdminRoute,
+  id: '/admin/trainers',
+  path: '/admin/trainers',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAdminStatsRoute = AppAdminStatsRouteImport.update({
-  id: '/stats',
-  path: '/stats',
-  getParentRoute: () => AppAdminRoute,
+  id: '/admin/stats',
+  path: '/admin/stats',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAdminNoticeRoute = AppAdminNoticeRouteImport.update({
-  id: '/notice',
-  path: '/notice',
-  getParentRoute: () => AppAdminRoute,
+  id: '/admin/notice',
+  path: '/admin/notice',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAdminExercisesRoute = AppAdminExercisesRouteImport.update({
-  id: '/exercises',
-  path: '/exercises',
-  getParentRoute: () => AppAdminRoute,
+  id: '/admin/exercises',
+  path: '/admin/exercises',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAdminTrainersTrainerIdRoute =
   AppAdminTrainersTrainerIdRouteImport.update({
@@ -142,7 +142,6 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRouteWithChildren
-  '/admin': typeof AppAdminRouteWithChildren
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
@@ -158,11 +157,11 @@ export interface FileRoutesByFullPath {
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/workouts': typeof AppAdminWorkoutsRoute
   '/member/exercises/$exerciseId': typeof MemberExercisesExerciseIdRoute
+  '/admin/': typeof AppAdminIndexRoute
   '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/admin': typeof AppAdminRouteWithChildren
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
@@ -179,6 +178,7 @@ export interface FileRoutesByTo {
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/workouts': typeof AppAdminWorkoutsRoute
   '/member/exercises/$exerciseId': typeof MemberExercisesExerciseIdRoute
+  '/admin': typeof AppAdminIndexRoute
   '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRoutesById {
@@ -186,7 +186,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/member': typeof MemberRouteWithChildren
-  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/members': typeof AppMembersRoute
@@ -203,6 +202,7 @@ export interface FileRoutesById {
   '/_app/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/_app/admin/workouts': typeof AppAdminWorkoutsRoute
   '/member/exercises/$exerciseId': typeof MemberExercisesExerciseIdRoute
+  '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRouteTypes {
@@ -211,7 +211,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/member'
-    | '/admin'
     | '/attendance'
     | '/calendar'
     | '/members'
@@ -227,11 +226,11 @@ export interface FileRouteTypes {
     | '/admin/trainers'
     | '/admin/workouts'
     | '/member/exercises/$exerciseId'
+    | '/admin/'
     | '/admin/trainers/$trainerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/admin'
     | '/attendance'
     | '/calendar'
     | '/members'
@@ -248,13 +247,13 @@ export interface FileRouteTypes {
     | '/admin/trainers'
     | '/admin/workouts'
     | '/member/exercises/$exerciseId'
+    | '/admin'
     | '/admin/trainers/$trainerId'
   id:
     | '__root__'
     | '/_app'
     | '/login'
     | '/member'
-    | '/_app/admin'
     | '/_app/attendance'
     | '/_app/calendar'
     | '/_app/members'
@@ -271,6 +270,7 @@ export interface FileRouteTypes {
     | '/_app/admin/trainers'
     | '/_app/admin/workouts'
     | '/member/exercises/$exerciseId'
+    | '/_app/admin/'
     | '/_app/admin/trainers/$trainerId'
   fileRoutesById: FileRoutesById
 }
@@ -373,11 +373,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin': {
-      id: '/_app/admin'
+    '/_app/admin/': {
+      id: '/_app/admin/'
       path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/member/exercises/$exerciseId': {
@@ -389,38 +389,38 @@ declare module '@tanstack/react-router' {
     }
     '/_app/admin/workouts': {
       id: '/_app/admin/workouts'
-      path: '/workouts'
+      path: '/admin/workouts'
       fullPath: '/admin/workouts'
       preLoaderRoute: typeof AppAdminWorkoutsRouteImport
-      parentRoute: typeof AppAdminRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/trainers': {
       id: '/_app/admin/trainers'
-      path: '/trainers'
+      path: '/admin/trainers'
       fullPath: '/admin/trainers'
       preLoaderRoute: typeof AppAdminTrainersRouteImport
-      parentRoute: typeof AppAdminRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/stats': {
       id: '/_app/admin/stats'
-      path: '/stats'
+      path: '/admin/stats'
       fullPath: '/admin/stats'
       preLoaderRoute: typeof AppAdminStatsRouteImport
-      parentRoute: typeof AppAdminRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/notice': {
       id: '/_app/admin/notice'
-      path: '/notice'
+      path: '/admin/notice'
       fullPath: '/admin/notice'
       preLoaderRoute: typeof AppAdminNoticeRouteImport
-      parentRoute: typeof AppAdminRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/exercises': {
       id: '/_app/admin/exercises'
-      path: '/exercises'
+      path: '/admin/exercises'
       fullPath: '/admin/exercises'
       preLoaderRoute: typeof AppAdminExercisesRouteImport
-      parentRoute: typeof AppAdminRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/trainers/$trainerId': {
       id: '/_app/admin/trainers/$trainerId'
@@ -443,40 +443,30 @@ const AppAdminTrainersRouteChildren: AppAdminTrainersRouteChildren = {
 const AppAdminTrainersRouteWithChildren =
   AppAdminTrainersRoute._addFileChildren(AppAdminTrainersRouteChildren)
 
-interface AppAdminRouteChildren {
+interface AppRouteChildren {
+  AppAttendanceRoute: typeof AppAttendanceRoute
+  AppCalendarRoute: typeof AppCalendarRoute
+  AppMembersRoute: typeof AppMembersRoute
+  AppIndexRoute: typeof AppIndexRoute
   AppAdminExercisesRoute: typeof AppAdminExercisesRoute
   AppAdminNoticeRoute: typeof AppAdminNoticeRoute
   AppAdminStatsRoute: typeof AppAdminStatsRoute
   AppAdminTrainersRoute: typeof AppAdminTrainersRouteWithChildren
   AppAdminWorkoutsRoute: typeof AppAdminWorkoutsRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
-const AppAdminRouteChildren: AppAdminRouteChildren = {
+const AppRouteChildren: AppRouteChildren = {
+  AppAttendanceRoute: AppAttendanceRoute,
+  AppCalendarRoute: AppCalendarRoute,
+  AppMembersRoute: AppMembersRoute,
+  AppIndexRoute: AppIndexRoute,
   AppAdminExercisesRoute: AppAdminExercisesRoute,
   AppAdminNoticeRoute: AppAdminNoticeRoute,
   AppAdminStatsRoute: AppAdminStatsRoute,
   AppAdminTrainersRoute: AppAdminTrainersRouteWithChildren,
   AppAdminWorkoutsRoute: AppAdminWorkoutsRoute,
-}
-
-const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
-  AppAdminRouteChildren,
-)
-
-interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRouteWithChildren
-  AppAttendanceRoute: typeof AppAttendanceRoute
-  AppCalendarRoute: typeof AppCalendarRoute
-  AppMembersRoute: typeof AppMembersRoute
-  AppIndexRoute: typeof AppIndexRoute
-}
-
-const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRouteWithChildren,
-  AppAttendanceRoute: AppAttendanceRoute,
-  AppCalendarRoute: AppCalendarRoute,
-  AppMembersRoute: AppMembersRoute,
-  AppIndexRoute: AppIndexRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -522,3 +512,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
