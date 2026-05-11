@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   useMembers,
   useSchedules,
-  useTrainers,
+  usePublicTrainers,
   useWorkoutLogs,
   uid,
   type Schedule,
@@ -35,7 +35,7 @@ function MemberRecords() {
   const { user } = useAuth();
   const [members] = useMembers();
   const [schedules] = useSchedules();
-  const [trainers] = useTrainers();
+  const [trainers] = usePublicTrainers();
   const [workoutLogs, setWorkoutLogs] = useWorkoutLogs();
   const [profileName, setProfileName] = useState("");
   const [cursor, setCursor] = useState(() => {

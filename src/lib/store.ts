@@ -294,6 +294,46 @@ function useSupabaseTable<L extends { id: string }>(
 export function useTrainers() {
   return useSupabaseTable<Trainer>("trainers", mapTrainer);
 }
+
+/**
+ * Public-safe trainer projection (id, name only) for member-facing routes.
+ * Reads from the `trainers_public` view, which excludes phone/memo.
+ * Use this anywhere a member context needs to display a trainer name.
+ */
+export function usePublicTrainers(): readonly [Trainer[]] {
+  const [data, setData] = useState<Trainer[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data: rows, error } = await (supabase as any)
+        .from("trainers_public")
+        .select("id,name,created_at");
+      if (cancelled) return;
+      if (error) {
+        console.error("[store:trainers_public] error", error);
+        return;
+      }
+      setData(
+        (rows ?? []).map((r: any) => ({
+          id: r.id,
+          name: r.name ?? "",
+          phone: "",
+          memo: "",
+        }))
+      );
+    };
+    load();
+    const channel = supabase
+      .channel("store:trainers_public")
+      .on("postgres_changes", { event: "*", schema: "public", table: "trainers" }, () => load())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+  return [data] as const;
+}
 export function useMembers() {
   return useSupabaseTable<Member>("members", mapMember);
 }

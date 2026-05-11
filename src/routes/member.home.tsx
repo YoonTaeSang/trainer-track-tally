@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Megaphone, Sparkles, FileSignature } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { SignatureDialog } from "@/components/signature-dialog";
 
@@ -28,7 +28,7 @@ function MemberHome() {
   const { user } = useAuth();
   const [members] = useMembers();
   const [schedules] = useSchedules();
-  const [trainers] = useTrainers();
+  const [trainers] = usePublicTrainers();
   const [profileName, setProfileName] = useState<string>("");
   const [notices, setNotices] = useState<NoticeRow[]>([]);
 
