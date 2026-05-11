@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { seedDemoData } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
+import { useRole } from "@/hooks/use-role";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
   const { session, loading } = useAuth();
+  const { role, loading: roleLoading } = useRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,11 +22,18 @@ function AppLayout() {
 
   useEffect(() => {
     if (!loading && !session) {
-      navigate({ to: "/auth" });
+      navigate({ to: "/login" });
     }
   }, [loading, session, navigate]);
 
-  if (loading) {
+  // Members shouldn't access admin pages
+  useEffect(() => {
+    if (!roleLoading && role === "member") {
+      navigate({ to: "/member" });
+    }
+  }, [role, roleLoading, navigate]);
+
+  if (loading || roleLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         로딩 중...
@@ -33,6 +42,7 @@ function AppLayout() {
   }
 
   if (!session) return null;
+  if (role === "member") return null;
 
   return (
     <SidebarProvider>

@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MemberRouteImport } from './routes/member'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppMembersRouteImport } from './routes/_app/members'
@@ -27,11 +26,6 @@ const MemberRoute = MemberRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -66,7 +60,6 @@ const AppAdminRoute = AppAdminRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
   '/admin': typeof AppAdminRoute
@@ -75,7 +68,6 @@ export interface FileRoutesByFullPath {
   '/members': typeof AppMembersRoute
 }
 export interface FileRoutesByTo {
-  '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
   '/admin': typeof AppAdminRoute
@@ -87,7 +79,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
   '/_app/admin': typeof AppAdminRoute
@@ -100,7 +91,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/auth'
     | '/login'
     | '/member'
     | '/admin'
@@ -109,7 +99,6 @@ export interface FileRouteTypes {
     | '/members'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/auth'
     | '/login'
     | '/member'
     | '/admin'
@@ -120,7 +109,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
-    | '/auth'
     | '/login'
     | '/member'
     | '/_app/admin'
@@ -132,7 +120,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
-  AuthRoute: typeof AuthRoute
   LoginRoute: typeof LoginRoute
   MemberRoute: typeof MemberRoute
 }
@@ -151,13 +138,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -225,7 +205,6 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
-  AuthRoute: AuthRoute,
   LoginRoute: LoginRoute,
   MemberRoute: MemberRoute,
 }
