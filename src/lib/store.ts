@@ -187,11 +187,17 @@ function notify<L>(c: CacheEntry<L>) {
   c.listeners.forEach((fn) => fn(c.data));
 }
 
+// Optional read source override per table (e.g., view for column-restricted SELECT).
+const readSourceOverride: Record<string, string> = {
+  trainers: "trainers_public",
+};
+
 async function refetch<L>(table: string, mapper: Mapper<L>) {
   const c = getCache<L>(table);
   if (c.loading) return;
   c.loading = true;
-  const { data, error } = await (supabase as any).from(table).select("*");
+  const readSource = readSourceOverride[table] ?? table;
+  const { data, error } = await (supabase as any).from(readSource).select("*");
   c.loading = false;
   if (error) {
     console.error(`[store:${table}] refetch error`, error);
