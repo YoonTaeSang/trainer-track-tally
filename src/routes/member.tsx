@@ -64,9 +64,7 @@ function MemberLayout() {
               <span className="text-[10px] text-muted-foreground">내 PT</span>
             </div>
           </Link>
-          <Button variant="ghost" size="icon" aria-label="알림">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationBell />
         </header>
 
         <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
