@@ -221,13 +221,14 @@ function MembersPage() {
                 <TableHead>등록일</TableHead>
                 <TableHead>세션</TableHead>
                 <TableHead>잔여</TableHead>
+                {isAdmin && <TableHead>담당 트레이너</TableHead>}
                 <TableHead className="text-right">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-sm text-muted-foreground">
                     등록된 회원이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -245,6 +246,24 @@ function MembersPage() {
                           {remain}회
                         </Badge>
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <Select
+                            value={m.trainerId ?? "__none__"}
+                            onValueChange={(v) => assignTrainer(m.id, v)}
+                          >
+                            <SelectTrigger className="h-8 w-[160px]">
+                              <SelectValue placeholder="미배정" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">미배정</SelectItem>
+                              {trainers.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      )}
                       <TableCell className="text-right">
                         <Button size="icon" variant="ghost" onClick={() => openCharge(m)} title="세션 충전">
                           <BatteryCharging className="h-4 w-4" />
@@ -255,9 +274,11 @@ function MembersPage() {
                         <Button size="icon" variant="ghost" onClick={() => openEdit(m)} title="수정">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {isAdmin && (
+                          <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
