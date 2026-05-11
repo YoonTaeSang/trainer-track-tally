@@ -50,6 +50,28 @@ function MembersPage() {
   const [scheduleFor, setScheduleFor] = useState<Member | null>(null);
   const [schedDate, setSchedDate] = useState(new Date().toISOString().slice(0, 10));
   const [schedTime, setSchedTime] = useState("10:00");
+  const [chargeFor, setChargeFor] = useState<Member | null>(null);
+  const [chargeAmount, setChargeAmount] = useState(10);
+
+  const openCharge = (m: Member) => {
+    setChargeFor(m);
+    setChargeAmount(10);
+  };
+
+  const applyCharge = () => {
+    if (!chargeFor) return;
+    if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
+      toast.error("1회 이상의 충전 횟수를 입력해주세요.");
+      return;
+    }
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === chargeFor.id ? { ...m, totalSessions: m.totalSessions + chargeAmount } : m
+      )
+    );
+    toast.success(`${chargeFor.name} 회원에게 ${chargeAmount}회 충전되었습니다.`);
+    setChargeFor(null);
+  };
 
   const openSchedule = (m: Member) => {
     setScheduleFor(m);
