@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Calendar, ClipboardCheck, Dumbbell, LogOut, UserCog, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, ClipboardCheck, Dumbbell, LogOut, UserCog, BarChart3, Activity } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,7 @@ const items = [
   { title: "트레이너 관리", url: "/admin/trainers", icon: UserCog },
   { title: "일정 캘린더", url: "/calendar", icon: Calendar },
   { title: "출석 체크", url: "/attendance", icon: ClipboardCheck },
+  { title: "운동 라이브러리", url: "/admin/exercises", icon: Activity },
   { title: "통계", url: "/admin/stats", icon: BarChart3 },
 ] as const;
 

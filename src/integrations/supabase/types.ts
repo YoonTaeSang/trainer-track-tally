@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      exercise_favorites: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_favorites_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          body_part: string
+          created_at: string
+          description: string
+          difficulty: string
+          id: string
+          name: string
+          thumbnail_url: string | null
+          updated_at: string
+          youtube_url: string | null
+        }
+        Insert: {
+          body_part: string
+          created_at?: string
+          description?: string
+          difficulty: string
+          id?: string
+          name: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Update: {
+          body_part?: string
+          created_at?: string
+          description?: string
+          difficulty?: string
+          id?: string
+          name?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
