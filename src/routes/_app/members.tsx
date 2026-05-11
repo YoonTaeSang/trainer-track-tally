@@ -24,7 +24,16 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useMembers, useSchedules, uid, type Member } from "@/lib/store";
+import { useMembers, useSchedules, useTrainers, uid, type Member } from "@/lib/store";
+import { useRole } from "@/hooks/use-role";
+import { useCurrentTrainer } from "@/hooks/use-current-trainer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/members")({
   component: MembersPage,
