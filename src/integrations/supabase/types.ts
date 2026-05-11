@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      body_metrics: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          recorded_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          recorded_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          recorded_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       exercise_favorites: {
         Row: {
           created_at: string
@@ -76,6 +103,54 @@ export type Database = {
           thumbnail_url?: string | null
           updated_at?: string
           youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      member_goals: {
+        Row: {
+          goal_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          goal_text?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          goal_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }

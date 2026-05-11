@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { seedDemoData } from "@/lib/store";
 import { DEV_BYPASS } from "@/lib/dev-mode";
-import { Button } from "@/components/ui/button";
-import { Bell, Dumbbell, Home, Calendar, Activity, ClipboardList, User } from "lucide-react";
+import { Dumbbell, Home, Calendar, Activity, ClipboardList, User } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 
 export const Route = createFileRoute("/member")({
   component: MemberLayout,
@@ -63,9 +63,7 @@ function MemberLayout() {
               <span className="text-[10px] text-muted-foreground">내 PT</span>
             </div>
           </Link>
-          <Button variant="ghost" size="icon" aria-label="알림">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationBell />
         </header>
 
         <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
