@@ -21,6 +21,7 @@ const items = [
   { title: "트레이너 관리", url: "/admin/trainers", icon: UserCog },
   { title: "일정 캘린더", url: "/calendar", icon: Calendar },
   { title: "출석 체크", url: "/attendance", icon: ClipboardCheck },
+  { title: "통계", url: "/admin/stats", icon: BarChart3 },
 ] as const;
 
 export function AppSidebar() {
