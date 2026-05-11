@@ -233,12 +233,20 @@ function MembersPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <Input
-            placeholder="이름 또는 연락처로 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="mb-4 max-w-sm"
-          />
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <Input
+              placeholder="이름 또는 연락처로 검색"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-sm"
+            />
+            {isAdmin && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Switch checked={showInactive} onCheckedChange={setShowInactive} />
+                비활성화 회원 보기
+              </label>
+            )}
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -261,8 +269,9 @@ function MembersPage() {
               ) : (
                 filtered.map((m) => {
                   const remain = m.totalSessions - m.usedSessions;
+                  const isInactive = m.status === "inactive";
                   return (
-                    <TableRow key={m.id}>
+                    <TableRow key={m.id} className={isInactive ? "opacity-50" : undefined}>
                       <TableCell className="font-medium">
                         <Link
                           to="/members/$memberId"
@@ -271,6 +280,11 @@ function MembersPage() {
                         >
                           {m.name}
                         </Link>
+                        {isInactive && (
+                          <Badge variant="outline" className="ml-2 text-[10px]">
+                            비활성
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>{m.phone}</TableCell>
                       <TableCell>{m.joinedAt}</TableCell>
@@ -312,9 +326,24 @@ function MembersPage() {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         )}
-                        {isAdmin && (
-                          <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
-                            <Trash2 className="h-4 w-4" />
+                        {isAdmin && !isInactive && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setDeactivateFor(m)}
+                            title="비활성화"
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {isAdmin && isInactive && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => reactivate(m.id)}
+                            title="활성화"
+                          >
+                            <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
                       </TableCell>
