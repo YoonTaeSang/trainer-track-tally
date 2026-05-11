@@ -258,29 +258,24 @@ function useSupabaseTable<L extends { id: string }>(
       }
 
       // Fire async DB ops; realtime will reconcile.
+      const sb = supabase as any;
       if (toDelete.length) {
-        supabase
-          .from(table)
-          .delete()
-          .in("id", toDelete)
-          .then(({ error }) => {
-            if (error) console.error(`[store:${table}] delete error`, error);
-          });
+        sb.from(table).delete().in("id", toDelete).then(({ error }: any) => {
+          if (error) console.error(`[store:${table}] delete error`, error);
+        });
       }
       if (toInsert.length) {
-        supabase
-          .from(table)
+        sb.from(table)
           .insert(toInsert.map(mapper.toRow))
-          .then(({ error }) => {
+          .then(({ error }: any) => {
             if (error) console.error(`[store:${table}] insert error`, error);
           });
       }
       for (const item of toUpdate) {
-        supabase
-          .from(table)
+        sb.from(table)
           .update(mapper.toRow(item))
           .eq("id", item.id)
-          .then(({ error }) => {
+          .then(({ error }: any) => {
             if (error) console.error(`[store:${table}] update error`, error);
           });
       }
