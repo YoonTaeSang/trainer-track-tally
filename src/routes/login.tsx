@@ -48,7 +48,7 @@ function LoginPage() {
   const [signupBirth, setSignupBirth] = useState("");
   const [signupGender, setSignupGender] = useState<"male" | "female" | "other" | "">("");
   const [signupAddress, setSignupAddress] = useState("");
-  const [signupRole, setSignupRole] = useState<"trainer" | "member">("member");
+  
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
