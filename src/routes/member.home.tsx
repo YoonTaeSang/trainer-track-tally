@@ -62,6 +62,15 @@ function MemberHome() {
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
   }, [schedules, myMember, todayStr]);
 
+  const pendingSignatures = useMemo(() => {
+    if (!myMember) return [] as Schedule[];
+    return schedules
+      .filter((s) => s.memberId === myMember.id && s.signatureRequested && !s.signatureUrl)
+      .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  }, [schedules, myMember]);
+
+  const [signing, setSigning] = useState<Schedule | null>(null);
+
   // 이번 달 출석 날짜 (Set)
   const attendedDays = useMemo(() => {
     if (!myMember) return new Set<number>();
