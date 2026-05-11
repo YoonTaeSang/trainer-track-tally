@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus, Trash2, Pencil, CalendarPlus, BatteryCharging } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -237,7 +237,15 @@ function MembersPage() {
                   const remain = m.totalSessions - m.usedSessions;
                   return (
                     <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/members/$memberId"
+                          params={{ memberId: m.id }}
+                          className="hover:underline"
+                        >
+                          {m.name}
+                        </Link>
+                      </TableCell>
                       <TableCell>{m.phone}</TableCell>
                       <TableCell>{m.joinedAt}</TableCell>
                       <TableCell>{m.usedSessions} / {m.totalSessions}</TableCell>

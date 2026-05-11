@@ -32,6 +32,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
+import { LowSessionAlert } from "@/components/low-session-alert";
 import { toast } from "sonner";
 
 const allItems = [
@@ -126,6 +127,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
+        {role === "trainer" && <LowSessionAlert />}
         <SidebarGroup>
           <SidebarGroupLabel>메뉴</SidebarGroupLabel>
           <SidebarGroupContent>
