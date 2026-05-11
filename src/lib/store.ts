@@ -11,6 +11,8 @@ export type Trainer = {
   memo?: string;
 };
 
+export type MemberStatus = "pending" | "active" | "inactive" | "rejected";
+
 export type Member = {
   id: string;
   name: string;
@@ -20,6 +22,7 @@ export type Member = {
   usedSessions: number;
   trainerId?: string | null;
   memo?: string;
+  status: MemberStatus;
 };
 
 export type Schedule = {
@@ -96,6 +99,7 @@ const mapMember = {
     usedSessions: r.used_sessions ?? 0,
     trainerId: r.trainer_id ?? null,
     memo: r.memo ?? "",
+    status: (r.status ?? "active") as MemberStatus,
   }),
   toRow: (m: Member) => ({
     id: m.id,
@@ -106,6 +110,7 @@ const mapMember = {
     used_sessions: m.usedSessions ?? 0,
     trainer_id: m.trainerId ?? null,
     memo: m.memo ?? "",
+    status: m.status ?? "active",
   }),
 };
 
