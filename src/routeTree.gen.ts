@@ -17,6 +17,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as MemberRecordsRouteImport } from './routes/member.records'
 import { Route as MemberProfileRouteImport } from './routes/member.profile'
 import { Route as MemberHomeRouteImport } from './routes/member.home'
+import { Route as MemberExercisesRouteImport } from './routes/member.exercises'
 import { Route as MemberBookingRouteImport } from './routes/member.booking'
 import { Route as AppMembersRouteImport } from './routes/_app/members'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
@@ -63,6 +64,11 @@ const MemberProfileRoute = MemberProfileRouteImport.update({
 const MemberHomeRoute = MemberHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberExercisesRoute = MemberExercisesRouteImport.update({
+  id: '/exercises',
+  path: '/exercises',
   getParentRoute: () => MemberRoute,
 } as any)
 const MemberBookingRoute = MemberBookingRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
   '/member/booking': typeof MemberBookingRoute
+  '/member/exercises': typeof MemberExercisesRoute
   '/member/home': typeof MemberHomeRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
   '/member/booking': typeof MemberBookingRoute
+  '/member/exercises': typeof MemberExercisesRoute
   '/member/home': typeof MemberHomeRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/members': typeof AppMembersRoute
   '/member/booking': typeof MemberBookingRoute
+  '/member/exercises': typeof MemberExercisesRoute
   '/member/home': typeof MemberHomeRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/members'
     | '/member/booking'
+    | '/member/exercises'
     | '/member/home'
     | '/member/profile'
     | '/member/records'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/members'
     | '/member/booking'
+    | '/member/exercises'
     | '/member/home'
     | '/member/profile'
     | '/member/records'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/_app/calendar'
     | '/_app/members'
     | '/member/booking'
+    | '/member/exercises'
     | '/member/home'
     | '/member/profile'
     | '/member/records'
@@ -275,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/member/home'
       preLoaderRoute: typeof MemberHomeRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/exercises': {
+      id: '/member/exercises'
+      path: '/exercises'
+      fullPath: '/member/exercises'
+      preLoaderRoute: typeof MemberExercisesRouteImport
       parentRoute: typeof MemberRoute
     }
     '/member/booking': {
@@ -381,6 +400,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface MemberRouteChildren {
   MemberBookingRoute: typeof MemberBookingRoute
+  MemberExercisesRoute: typeof MemberExercisesRoute
   MemberHomeRoute: typeof MemberHomeRoute
   MemberProfileRoute: typeof MemberProfileRoute
   MemberRecordsRoute: typeof MemberRecordsRoute
@@ -389,6 +409,7 @@ interface MemberRouteChildren {
 
 const MemberRouteChildren: MemberRouteChildren = {
   MemberBookingRoute: MemberBookingRoute,
+  MemberExercisesRoute: MemberExercisesRoute,
   MemberHomeRoute: MemberHomeRoute,
   MemberProfileRoute: MemberProfileRoute,
   MemberRecordsRoute: MemberRecordsRoute,
@@ -406,3 +427,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
