@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { seedDemoData } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
+import { DEV_BYPASS } from "@/lib/dev-mode";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -21,6 +22,7 @@ function AppLayout() {
   }, []);
 
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!loading && !session) {
       navigate({ to: "/login" });
     }
@@ -28,12 +30,13 @@ function AppLayout() {
 
   // Members shouldn't access admin pages
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!roleLoading && role === "member") {
       navigate({ to: "/member" });
     }
   }, [role, roleLoading, navigate]);
 
-  if (loading || roleLoading) {
+  if (!DEV_BYPASS && (loading || roleLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         로딩 중...
@@ -41,8 +44,8 @@ function AppLayout() {
     );
   }
 
-  if (!session) return null;
-  if (role === "member") return null;
+  if (!DEV_BYPASS && !session) return null;
+  if (!DEV_BYPASS && role === "member") return null;
 
   return (
     <SidebarProvider>

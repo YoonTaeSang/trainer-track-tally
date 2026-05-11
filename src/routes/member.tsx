@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { useMembers, useSchedules, seedDemoData } from "@/lib/store";
+import { DEV_BYPASS } from "@/lib/dev-mode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ function MemberPage() {
 
   // Auth guard: redirect non-logged-in to /login
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!authLoading && !user) {
       navigate({ to: "/login" });
     }
@@ -34,6 +36,7 @@ function MemberPage() {
 
   // Role guard: send admin/trainer to /admin
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!roleLoading && role && (role === "admin" || role === "trainer")) {
       navigate({ to: "/admin" });
     }
@@ -76,7 +79,7 @@ function MemberPage() {
     navigate({ to: "/login" });
   };
 
-  if (authLoading || roleLoading || !user) {
+  if (!DEV_BYPASS && (authLoading || roleLoading || !user)) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         로딩 중...
