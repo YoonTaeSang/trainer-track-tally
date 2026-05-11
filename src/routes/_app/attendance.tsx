@@ -202,6 +202,21 @@ function AttendancePage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!previewUrl} onOpenChange={(o) => !o && setPreviewUrl(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>회원 서명</DialogTitle>
+          </DialogHeader>
+          {previewUrl && (
+            <img
+              src={previewUrl}
+              alt="회원 서명"
+              className="w-full rounded-md border bg-white"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
