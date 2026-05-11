@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Megaphone, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Megaphone, Sparkles, FileSignature } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, useTrainers } from "@/lib/store";
+import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { SignatureDialog } from "@/components/signature-dialog";
 
 export const Route = createFileRoute("/member/home")({
   component: MemberHome,
