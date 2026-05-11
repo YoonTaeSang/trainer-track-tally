@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMembers, useSchedules } from "@/lib/store";
 
-export const Route = createFileRoute("/_app/admin")({
+export const Route = createFileRoute("/_app/admin/")({
   component: AdminDashboard,
   head: () => ({ meta: [{ title: "관리자 대시보드 | PT Studio" }] }),
 });
