@@ -317,6 +317,20 @@ export function useTrainers() {
   return useSupabaseTable<Trainer>("trainers", mapTrainer);
 }
 
+/** Subscribe to load/error status of a store-managed table. */
+export function useTableStatus(table: "trainers" | "members" | "schedules" | "workout_logs") {
+  const c = getCache<any>(table);
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    c.statusListeners.add(fn);
+    return () => {
+      c.statusListeners.delete(fn);
+    };
+  }, [table]);
+  return { loading: c.loading, loaded: c.loaded, error: c.error };
+}
+
 /**
  * Public-safe trainer projection (id, name only) for member-facing routes.
  * Reads from the `trainers_public` view, which excludes phone/memo.
