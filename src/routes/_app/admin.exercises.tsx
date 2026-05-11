@@ -148,6 +148,7 @@ function AdminExercisesPage() {
             회원에게 제공되는 운동 정보를 관리합니다.
           </p>
         </div>
+        {isAdmin && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button onClick={openNew}>
