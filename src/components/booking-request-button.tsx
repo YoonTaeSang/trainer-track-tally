@@ -42,21 +42,11 @@ export function BookingRequestButtons({ schedule, member, trainer, userId, onSub
     return true;
   };
 
-  const lookupTrainerUserId = async (): Promise<string | null> => {
-    if (!trainer?.name) return null;
-    const { data } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("name", trainer.name)
-      .maybeSingle();
-    return data?.id ?? null;
-  };
-
   const submit = async (type: "cancel" | "change") => {
     if (!guard()) return;
     setSubmitting(true);
     try {
-      const trainerUserId = await lookupTrainerUserId();
+      const trainerUserId = trainer?.userId ?? null;
       const { error } = await supabase.from("schedule_requests").insert({
         member_user_id: userId,
         trainer_user_id: trainerUserId,
