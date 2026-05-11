@@ -190,7 +190,6 @@ function LoginPage() {
                   <div className="flex gap-2">
                     <Button type="button" variant={signupGender === "male" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("male")}>남성</Button>
                     <Button type="button" variant={signupGender === "female" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("female")}>여성</Button>
-                    <Button type="button" variant={signupGender === "other" ? "default" : "outline"} className="flex-1" onClick={() => setSignupGender("other")}>기타</Button>
                   </div>
                 </div>
                 <div className="space-y-2">
