@@ -36,7 +36,7 @@ function AppLayout() {
     }
   }, [role, roleLoading, navigate]);
 
-  if (loading || roleLoading) {
+  if (!DEV_BYPASS && (loading || roleLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         로딩 중...
@@ -44,8 +44,8 @@ function AppLayout() {
     );
   }
 
-  if (!session) return null;
-  if (role === "member") return null;
+  if (!DEV_BYPASS && !session) return null;
+  if (!DEV_BYPASS && role === "member") return null;
 
   return (
     <SidebarProvider>
