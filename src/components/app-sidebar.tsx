@@ -62,6 +62,11 @@ export function AppSidebar() {
 
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [allMembers] = useMembers();
+  const pendingMemberCount = useMemo(
+    () => allMembers.filter((m) => m.status === "pending").length,
+    [allMembers]
+  );
 
   // pending schedule requests badge
   useEffect(() => {
@@ -141,6 +146,8 @@ export function AppSidebar() {
                     ? pendingCount
                     : item.key === "messages" && unreadMsgCount > 0
                     ? unreadMsgCount
+                    : item.key === "approvals" && pendingMemberCount > 0
+                    ? pendingMemberCount
                     : 0;
                 return (
                   <SidebarMenuItem key={item.title}>
