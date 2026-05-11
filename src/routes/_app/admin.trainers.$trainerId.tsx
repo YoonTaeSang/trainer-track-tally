@@ -14,6 +14,14 @@ import {
 } from "@/components/ui/table";
 import { useTrainers, useMembers, useSchedules } from "@/lib/store";
 import { useRoleGuard } from "@/hooks/use-role-guard";
+import { GoalsSection } from "@/components/goals-section";
+import { Target } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/_app/admin/trainers/$trainerId")({
   component: TrainerDetailPage,
