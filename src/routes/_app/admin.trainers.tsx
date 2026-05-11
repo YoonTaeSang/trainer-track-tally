@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Trash2, Pencil, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,13 +24,22 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useTrainers, useMembers, useSchedules, uid, type Trainer } from "@/lib/store";
+import { useTrainers, useMembers, useSchedules, useTableStatus, refetchAllTables, uid, type Trainer } from "@/lib/store";
 import { useRoleGuard } from "@/hooks/use-role-guard";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export const Route = createFileRoute("/_app/admin/trainers")({
-  component: TrainersPage,
+  component: TrainersPageWrapper,
   head: () => ({ meta: [{ title: "트레이너 관리 | PT Studio" }] }),
 });
+
+function TrainersPageWrapper() {
+  return (
+    <ErrorBoundary>
+      <TrainersPage />
+    </ErrorBoundary>
+  );
+}
 
 const empty: Omit<Trainer, "id"> = { name: "", phone: "", memo: "" };
 
