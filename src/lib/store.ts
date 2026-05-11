@@ -186,7 +186,7 @@ async function refetch<L>(table: string, mapper: Mapper<L>) {
   const c = getCache<L>(table);
   if (c.loading) return;
   c.loading = true;
-  const { data, error } = await supabase.from(table).select("*");
+  const { data, error } = await (supabase as any).from(table).select("*");
   c.loading = false;
   if (error) {
     console.error(`[store:${table}] refetch error`, error);
