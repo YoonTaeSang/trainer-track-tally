@@ -63,16 +63,10 @@ function NoticePage() {
     }
     setSending(true);
     try {
-      const names = targets.map((m) => m.name);
-      const { data: profiles, error: pErr } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("name", names);
-      if (pErr) throw pErr;
-
+      const targetsWithUser = targets.filter((m) => !!m.userId);
       const category = isAdmin ? "gym" : "trainer";
-      const rows = (profiles ?? []).map((p) => ({
-        user_id: p.id,
+      const rows = targetsWithUser.map((m) => ({
+        user_id: m.userId as string,
         sender_id: user?.id ?? null,
         type: "trainer_message",
         category,
