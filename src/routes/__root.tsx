@@ -123,6 +123,7 @@ function RootComponent() {
       <AuthProvider>
         <Outlet />
         <DevModeSwitcher />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );
