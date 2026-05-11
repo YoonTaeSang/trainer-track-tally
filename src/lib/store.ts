@@ -115,6 +115,10 @@ export function useTrainers() {
   return useStore<Trainer[]>(TRAINERS_KEY, []);
 }
 
+export function useWorkoutLogs() {
+  return useStore<WorkoutLog[]>(WORKOUT_LOGS_KEY, []);
+}
+
 export function seedDemoData() {
   if (typeof window === "undefined") return;
 
