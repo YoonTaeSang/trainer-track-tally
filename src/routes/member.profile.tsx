@@ -99,7 +99,7 @@ function MemberProfile() {
     if (error) return toast.error(error.message);
     toast.success("회원 탈퇴가 완료되었습니다");
     await signOut();
-    navigate({ to: "/login" });
+    window.location.href = "/login";
   };
 
   // Profile
