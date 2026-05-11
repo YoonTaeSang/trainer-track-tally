@@ -18,6 +18,7 @@ function MemberHome() {
   const [schedules] = useSchedules();
   const [trainers] = useTrainers();
   const [profileName, setProfileName] = useState<string>("");
+  const [latestNotice, setLatestNotice] = useState<{ title: string; body: string; created_at: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +28,16 @@ function MemberHome() {
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => setProfileName(data?.name ?? ""));
+
+    supabase
+      .from("notifications")
+      .select("title, body, created_at")
+      .eq("user_id", user.id)
+      .eq("type", "trainer_message")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setLatestNotice(data ?? null));
   }, [user]);
 
   const myMember = useMemo(() => {
