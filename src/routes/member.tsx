@@ -97,5 +97,3 @@ function MemberLayout() {
     </div>
   );
 }
-
-export type MemberOutletContext = { profileName: string };
