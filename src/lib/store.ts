@@ -27,9 +27,33 @@ export type Schedule = {
   attended: boolean | null; // null=예정, true=출석, false=결석
 };
 
+export type WorkoutEntry = {
+  id: string;
+  name: string;
+  sets: number;
+  weight: number;
+  reps: number;
+};
+
+export type MemberMemo = {
+  id: string;
+  at: string; // ISO
+  text: string;
+};
+
+export type WorkoutLog = {
+  id: string;
+  scheduleId: string;
+  memberId: string;
+  trainerMemo: string;
+  exercises: WorkoutEntry[];
+  memberMemos: MemberMemo[];
+};
+
 const MEMBERS_KEY = "pt_members";
 const SCHEDULES_KEY = "pt_schedules";
 const TRAINERS_KEY = "pt_trainers";
+const WORKOUT_LOGS_KEY = "pt_workout_logs";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -89,6 +113,10 @@ export function useSchedules() {
 
 export function useTrainers() {
   return useStore<Trainer[]>(TRAINERS_KEY, []);
+}
+
+export function useWorkoutLogs() {
+  return useStore<WorkoutLog[]>(WORKOUT_LOGS_KEY, []);
 }
 
 export function seedDemoData() {
