@@ -16,15 +16,16 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
-const items = [
-  { title: "대시보드", url: "/admin", icon: LayoutDashboard },
-  { title: "회원 관리", url: "/members", icon: Users },
-  { title: "트레이너 관리", url: "/admin/trainers", icon: UserCog },
-  { title: "일정 캘린더", url: "/calendar", icon: Calendar },
-  { title: "출석 체크", url: "/attendance", icon: ClipboardCheck },
-  { title: "운동 라이브러리", url: "/admin/exercises", icon: Activity },
-  { title: "운동기록 관리", url: "/admin/workouts", icon: NotebookPen },
-  { title: "통계", url: "/admin/stats", icon: BarChart3 },
+const allItems = [
+  { title: "대시보드", url: "/admin", icon: LayoutDashboard, roles: ["admin", "trainer"] },
+  { title: "회원 관리", url: "/members", icon: Users, roles: ["admin", "trainer"] },
+  { title: "트레이너 관리", url: "/admin/trainers", icon: UserCog, roles: ["admin"] },
+  { title: "일정 캘린더", url: "/calendar", icon: Calendar, roles: ["admin", "trainer"] },
+  { title: "출석 체크", url: "/attendance", icon: ClipboardCheck, roles: ["admin", "trainer"] },
+  { title: "운동 라이브러리", url: "/admin/exercises", icon: Activity, roles: ["admin", "trainer"] },
+  { title: "운동기록 관리", url: "/admin/workouts", icon: NotebookPen, roles: ["admin", "trainer"] },
+  { title: "공지 보내기", url: "/admin/notice", icon: Megaphone, roles: ["admin", "trainer"] },
+  { title: "통계", url: "/admin/stats", icon: BarChart3, roles: ["admin"] },
 ] as const;
 
 export function AppSidebar() {
