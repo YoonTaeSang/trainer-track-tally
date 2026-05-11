@@ -185,7 +185,7 @@ const caches = new Map<string, CacheEntry<any>>();
 function getCache<L>(table: string): CacheEntry<L> {
   let c = caches.get(table) as CacheEntry<L> | undefined;
   if (!c) {
-    c = { data: [], loaded: false, loading: false, listeners: new Set() };
+    c = { data: [], loaded: false, loading: false, error: null, listeners: new Set(), statusListeners: new Set() };
     caches.set(table, c);
   }
   return c;
@@ -193,6 +193,10 @@ function getCache<L>(table: string): CacheEntry<L> {
 
 function notify<L>(c: CacheEntry<L>) {
   c.listeners.forEach((fn) => fn(c.data));
+}
+
+function notifyStatus<L>(c: CacheEntry<L>) {
+  c.statusListeners.forEach((fn) => fn());
 }
 
 async function refetch<L>(table: string, mapper: Mapper<L>) {
