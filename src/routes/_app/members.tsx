@@ -52,6 +52,11 @@ const empty: Omit<Member, "id"> = {
 function MembersPage() {
   const [members, setMembers] = useMembers();
   const [, setSchedules] = useSchedules();
+  const [trainers] = useTrainers();
+  const { role } = useRole();
+  const { trainerId: currentTrainerId } = useCurrentTrainer();
+  const isAdmin = role === "admin";
+  const isTrainer = role === "trainer";
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [form, setForm] = useState<Omit<Member, "id">>(empty);
@@ -61,6 +66,12 @@ function MembersPage() {
   const [schedTime, setSchedTime] = useState("10:00");
   const [chargeFor, setChargeFor] = useState<Member | null>(null);
   const [chargeAmount, setChargeAmount] = useState(10);
+
+  const assignTrainer = (memberId: string, trainerId: string) => {
+    const tid = trainerId === "__none__" ? null : trainerId;
+    setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, trainerId: tid } : m)));
+    toast.success("담당 트레이너가 저장되었습니다.");
+  };
 
   const openCharge = (m: Member) => {
     setChargeFor(m);
