@@ -244,6 +244,14 @@ function MemberHome() {
           </div>
         </CardContent>
       </Card>
+
+      <SignatureDialog
+        open={!!signing}
+        onOpenChange={(o) => !o && setSigning(null)}
+        schedule={signing}
+        memberName={myMember?.name ?? ""}
+        trainerName={myTrainer?.name ?? "트레이너"}
+      />
     </div>
   );
 }
