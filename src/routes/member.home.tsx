@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Megaphone, Sparkles, FileSignature } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
@@ -14,13 +15,33 @@ export const Route = createFileRoute("/member/home")({
   head: () => ({ meta: [{ title: "홈 | PT Studio" }] }),
 });
 
+type NoticeRow = {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  category: string;
+  read: boolean;
+};
+
 function MemberHome() {
   const { user } = useAuth();
   const [members] = useMembers();
   const [schedules] = useSchedules();
   const [trainers] = useTrainers();
   const [profileName, setProfileName] = useState<string>("");
-  const [latestNotice, setLatestNotice] = useState<{ title: string; body: string; created_at: string } | null>(null);
+  const [notices, setNotices] = useState<NoticeRow[]>([]);
+
+  const loadNotices = async (uid: string) => {
+    const { data } = await supabase
+      .from("notifications")
+      .select("id, title, body, created_at, category, read")
+      .eq("user_id", uid)
+      .eq("type", "trainer_message")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setNotices((data ?? []) as NoticeRow[]);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -31,16 +52,33 @@ function MemberHome() {
       .maybeSingle()
       .then(({ data }) => setProfileName(data?.name ?? ""));
 
-    supabase
-      .from("notifications")
-      .select("title, body, created_at")
-      .eq("user_id", user.id)
-      .eq("type", "trainer_message")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => setLatestNotice(data ?? null));
+    loadNotices(user.id);
+    const ch = supabase
+      .channel(`home_notices:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => loadNotices(user.id)
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user]);
+
+  const gymNotices = useMemo(() => notices.filter((n) => n.category === "gym"), [notices]);
+  const trainerNotices = useMemo(() => notices.filter((n) => n.category === "trainer"), [notices]);
+  const gymUnread = gymNotices.filter((n) => !n.read).length;
+  const trainerUnread = trainerNotices.filter((n) => !n.read).length;
+
+  const markCategoryRead = async (category: "gym" | "trainer") => {
+    if (!user) return;
+    const ids = notices.filter((n) => n.category === category && !n.read).map((n) => n.id);
+    if (ids.length === 0) return;
+    setNotices((p) => p.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)));
+    await supabase.from("notifications").update({ read: true }).in("id", ids);
+  };
+
 
   const myMember = useMemo(() => {
     if (!profileName) return members[0];
@@ -218,30 +256,39 @@ function MemberHome() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <Megaphone className="h-4 w-4" /> {latestNotice ? "공지사항" : "트레이너 메시지"}
+            <Megaphone className="h-4 w-4" /> 공지사항
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">
-                {latestNotice ? latestNotice.title : myTrainer?.name ?? "PT Studio"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {latestNotice
-                  ? latestNotice.body
-                  : "이번 주도 꾸준한 운동 부탁드려요. 다음 세션 전까지 스트레칭 잊지 마세요!"}
-              </p>
-              {latestNotice && (
-                <p className="text-[11px] text-muted-foreground">
-                  {new Date(latestNotice.created_at).toLocaleString("ko-KR")}
-                </p>
-              )}
-            </div>
-          </div>
+          <Tabs
+            defaultValue="gym"
+            onValueChange={(v) => markCategoryRead(v as "gym" | "trainer")}
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="gym" className="relative">
+                헬스장 공지
+                {gymUnread > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                    {gymUnread}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="trainer" className="relative">
+                트레이너 공지
+                {trainerUnread > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                    {trainerUnread}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="gym" className="mt-3">
+              <NoticeList items={gymNotices} fallbackName="PT Studio" emptyText="등록된 헬스장 공지가 없습니다." />
+            </TabsContent>
+            <TabsContent value="trainer" className="mt-3">
+              <NoticeList items={trainerNotices} fallbackName={myTrainer?.name ?? "트레이너"} emptyText="등록된 트레이너 공지가 없습니다." />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -253,5 +300,45 @@ function MemberHome() {
         trainerName={myTrainer?.name ?? "트레이너"}
       />
     </div>
+  );
+}
+
+function NoticeList({
+  items,
+  fallbackName,
+  emptyText,
+}: {
+  items: NoticeRow[];
+  fallbackName: string;
+  emptyText: string;
+}) {
+  if (items.length === 0) {
+    return <p className="py-4 text-center text-xs text-muted-foreground">{emptyText}</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {items.slice(0, 5).map((n) => (
+        <li
+          key={n.id}
+          className={`flex gap-3 rounded-md border p-3 ${!n.read ? "border-primary/40 bg-primary/5" : ""}`}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-sm font-medium">{n.title || fallbackName}</p>
+              {!n.read && (
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">{n.body}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {new Date(n.created_at).toLocaleString("ko-KR")}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
