@@ -210,6 +210,53 @@ export type Database = {
         }
         Relationships: []
       }
+      members: {
+        Row: {
+          created_at: string
+          id: string
+          joined_at: string
+          memo: string
+          name: string
+          phone: string
+          total_sessions: number
+          trainer_id: string | null
+          used_sessions: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          memo?: string
+          name?: string
+          phone?: string
+          total_sessions?: number
+          trainer_id?: string | null
+          used_sessions?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          memo?: string
+          name?: string
+          phone?: string
+          total_sessions?: number
+          trainer_id?: string | null
+          used_sessions?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
@@ -342,6 +389,77 @@ export type Database = {
         }
         Relationships: []
       }
+      schedules: {
+        Row: {
+          attended: boolean | null
+          created_at: string
+          date: string
+          id: string
+          member_id: string
+          signature_requested: boolean
+          signature_url: string | null
+          signed_at: string | null
+          time: string
+        }
+        Insert: {
+          attended?: boolean | null
+          created_at?: string
+          date: string
+          id?: string
+          member_id: string
+          signature_requested?: boolean
+          signature_url?: string | null
+          signed_at?: string | null
+          time: string
+        }
+        Update: {
+          attended?: boolean | null
+          created_at?: string
+          date?: string
+          id?: string
+          member_id?: string
+          signature_requested?: boolean
+          signature_url?: string | null
+          signed_at?: string | null
+          time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trainers: {
+        Row: {
+          created_at: string
+          id: string
+          memo: string
+          name: string
+          phone: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          memo?: string
+          name?: string
+          phone?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          memo?: string
+          name?: string
+          phone?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -359,6 +477,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workout_logs: {
+        Row: {
+          created_at: string
+          exercises: Json
+          id: string
+          member_id: string
+          member_memos: Json
+          schedule_id: string
+          trainer_memo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exercises?: Json
+          id?: string
+          member_id: string
+          member_memos?: Json
+          schedule_id: string
+          trainer_memo?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exercises?: Json
+          id?: string
+          member_id?: string
+          member_memos?: Json
+          schedule_id?: string
+          trainer_memo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_logs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

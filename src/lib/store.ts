@@ -1,5 +1,8 @@
-// Demo localStorage store for PT shop management
-import { useEffect, useState, useCallback } from "react";
+// Supabase-backed store with realtime sync.
+// Public hook API stays compatible with the previous localStorage version:
+//   const [items, setItems] = useMembers(); setItems(prev => ...);
+import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Trainer = {
   id: string;
@@ -12,7 +15,7 @@ export type Member = {
   id: string;
   name: string;
   phone: string;
-  joinedAt: string; // ISO date
+  joinedAt: string;
   totalSessions: number;
   usedSessions: number;
   trainerId?: string | null;
@@ -22,9 +25,9 @@ export type Member = {
 export type Schedule = {
   id: string;
   memberId: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
-  attended: boolean | null; // null=예정, true=출석, false=결석
+  date: string;
+  time: string;
+  attended: boolean | null;
   signatureRequested?: boolean;
   signatureUrl?: string | null;
   signedAt?: string | null;
@@ -40,7 +43,7 @@ export type WorkoutEntry = {
 
 export type MemberMemo = {
   id: string;
-  at: string; // ISO
+  at: string;
   text: string;
 };
 
@@ -53,122 +56,250 @@ export type WorkoutLog = {
   memberMemos: MemberMemo[];
 };
 
-const MEMBERS_KEY = "pt_members";
-const SCHEDULES_KEY = "pt_schedules";
-const TRAINERS_KEY = "pt_trainers";
-const WORKOUT_LOGS_KEY = "pt_workout_logs";
-
-function read<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function write<T>(key: string, value: T) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(value));
-  window.dispatchEvent(new CustomEvent("pt-store-update", { detail: { key } }));
-}
-
 export function uid() {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  // Need real UUIDs because the columns are uuid.
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  // Fallback (shouldn't happen in modern browsers/SSR runtime)
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
-function useStore<T>(key: string, fallback: T) {
-  const [value, setValue] = useState<T>(fallback);
+// ---- Mappers between DB rows and local shape ----
+
+const mapTrainer = {
+  fromRow: (r: any): Trainer => ({
+    id: r.id,
+    name: r.name ?? "",
+    phone: r.phone ?? "",
+    memo: r.memo ?? "",
+  }),
+  toRow: (t: Trainer) => ({
+    id: t.id,
+    name: t.name ?? "",
+    phone: t.phone ?? "",
+    memo: t.memo ?? "",
+  }),
+};
+
+const mapMember = {
+  fromRow: (r: any): Member => ({
+    id: r.id,
+    name: r.name ?? "",
+    phone: r.phone ?? "",
+    joinedAt: r.joined_at ?? "",
+    totalSessions: r.total_sessions ?? 0,
+    usedSessions: r.used_sessions ?? 0,
+    trainerId: r.trainer_id ?? null,
+    memo: r.memo ?? "",
+  }),
+  toRow: (m: Member) => ({
+    id: m.id,
+    name: m.name ?? "",
+    phone: m.phone ?? "",
+    joined_at: m.joinedAt || new Date().toISOString().slice(0, 10),
+    total_sessions: m.totalSessions ?? 0,
+    used_sessions: m.usedSessions ?? 0,
+    trainer_id: m.trainerId ?? null,
+    memo: m.memo ?? "",
+  }),
+};
+
+const mapSchedule = {
+  fromRow: (r: any): Schedule => ({
+    id: r.id,
+    memberId: r.member_id,
+    date: r.date,
+    time: r.time,
+    attended: r.attended,
+    signatureRequested: r.signature_requested ?? false,
+    signatureUrl: r.signature_url ?? null,
+    signedAt: r.signed_at ?? null,
+  }),
+  toRow: (s: Schedule) => ({
+    id: s.id,
+    member_id: s.memberId,
+    date: s.date,
+    time: s.time,
+    attended: s.attended,
+    signature_requested: s.signatureRequested ?? false,
+    signature_url: s.signatureUrl ?? null,
+    signed_at: s.signedAt ?? null,
+  }),
+};
+
+const mapWorkoutLog = {
+  fromRow: (r: any): WorkoutLog => ({
+    id: r.id,
+    scheduleId: r.schedule_id,
+    memberId: r.member_id,
+    trainerMemo: r.trainer_memo ?? "",
+    exercises: (r.exercises ?? []) as WorkoutEntry[],
+    memberMemos: (r.member_memos ?? []) as MemberMemo[],
+  }),
+  toRow: (l: WorkoutLog) => ({
+    id: l.id,
+    schedule_id: l.scheduleId,
+    member_id: l.memberId,
+    trainer_memo: l.trainerMemo ?? "",
+    exercises: l.exercises ?? [],
+    member_memos: l.memberMemos ?? [],
+  }),
+};
+
+// ---- Generic Supabase-synced collection hook ----
+
+type Mapper<L> = {
+  fromRow: (r: any) => L;
+  toRow: (l: L) => Record<string, any>;
+};
+
+// Per-table caches shared across hook instances so multiple components
+// mounting useMembers() etc. share the same data and one realtime channel.
+type CacheEntry<L> = {
+  data: L[];
+  loaded: boolean;
+  loading: boolean;
+  listeners: Set<(d: L[]) => void>;
+  channel?: ReturnType<typeof supabase.channel>;
+};
+const caches = new Map<string, CacheEntry<any>>();
+
+function getCache<L>(table: string): CacheEntry<L> {
+  let c = caches.get(table) as CacheEntry<L> | undefined;
+  if (!c) {
+    c = { data: [], loaded: false, loading: false, listeners: new Set() };
+    caches.set(table, c);
+  }
+  return c;
+}
+
+function notify<L>(c: CacheEntry<L>) {
+  c.listeners.forEach((fn) => fn(c.data));
+}
+
+async function refetch<L>(table: string, mapper: Mapper<L>) {
+  const c = getCache<L>(table);
+  if (c.loading) return;
+  c.loading = true;
+  const { data, error } = await (supabase as any).from(table).select("*");
+  c.loading = false;
+  if (error) {
+    console.error(`[store:${table}] refetch error`, error);
+    return;
+  }
+  c.data = (data ?? []).map(mapper.fromRow);
+  c.loaded = true;
+  notify(c);
+}
+
+function ensureSubscription<L>(table: string, mapper: Mapper<L>) {
+  const c = getCache<L>(table);
+  if (c.channel) return;
+  c.channel = supabase
+    .channel(`store:${table}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table },
+      () => refetch(table, mapper)
+    )
+    .subscribe();
+}
+
+function useSupabaseTable<L extends { id: string }>(
+  table: string,
+  mapper: Mapper<L>
+) {
+  const c = getCache<L>(table);
+  const [data, setLocal] = useState<L[]>(c.data);
+  const dataRef = useRef<L[]>(data);
+  dataRef.current = data;
 
   useEffect(() => {
-    setValue(read(key, fallback));
-    const onUpdate = (e: Event) => {
-      const ce = e as CustomEvent<{ key: string }>;
-      if (ce.detail?.key === key) setValue(read(key, fallback));
+    const listener = (d: L[]) => setLocal(d);
+    c.listeners.add(listener);
+    if (!c.loaded) refetch(table, mapper);
+    else setLocal(c.data);
+    ensureSubscription(table, mapper);
+    return () => {
+      c.listeners.delete(listener);
     };
-    window.addEventListener("pt-store-update", onUpdate);
-    return () => window.removeEventListener("pt-store-update", onUpdate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [table]);
 
   const update = useCallback(
-    (next: T | ((prev: T) => T)) => {
-      setValue((prev) => {
-        const resolved = typeof next === "function" ? (next as (p: T) => T)(prev) : next;
-        write(key, resolved);
-        return resolved;
-      });
+    (next: L[] | ((prev: L[]) => L[])) => {
+      const prev = c.data;
+      const resolved =
+        typeof next === "function" ? (next as (p: L[]) => L[])(prev) : next;
+      // Optimistic local + cache update
+      c.data = resolved;
+      notify(c);
+
+      const prevById = new Map(prev.map((x) => [x.id, x]));
+      const nextById = new Map(resolved.map((x) => [x.id, x]));
+
+      const toDelete: string[] = [];
+      const toInsert: L[] = [];
+      const toUpdate: L[] = [];
+
+      for (const id of prevById.keys()) {
+        if (!nextById.has(id)) toDelete.push(id);
+      }
+      for (const item of resolved) {
+        const prevItem = prevById.get(item.id);
+        if (!prevItem) toInsert.push(item);
+        else if (JSON.stringify(prevItem) !== JSON.stringify(item))
+          toUpdate.push(item);
+      }
+
+      // Fire async DB ops; realtime will reconcile.
+      const sb = supabase as any;
+      if (toDelete.length) {
+        sb.from(table).delete().in("id", toDelete).then(({ error }: any) => {
+          if (error) console.error(`[store:${table}] delete error`, error);
+        });
+      }
+      if (toInsert.length) {
+        sb.from(table)
+          .insert(toInsert.map(mapper.toRow))
+          .then(({ error }: any) => {
+            if (error) console.error(`[store:${table}] insert error`, error);
+          });
+      }
+      for (const item of toUpdate) {
+        sb.from(table)
+          .update(mapper.toRow(item))
+          .eq("id", item.id)
+          .then(({ error }: any) => {
+            if (error) console.error(`[store:${table}] update error`, error);
+          });
+      }
     },
-    [key]
+    [table, mapper]
   );
 
-  return [value, update] as const;
-}
-
-export function useMembers() {
-  return useStore<Member[]>(MEMBERS_KEY, []);
-}
-
-export function useSchedules() {
-  return useStore<Schedule[]>(SCHEDULES_KEY, []);
+  return [data, update] as const;
 }
 
 export function useTrainers() {
-  return useStore<Trainer[]>(TRAINERS_KEY, []);
+  return useSupabaseTable<Trainer>("trainers", mapTrainer);
 }
-
+export function useMembers() {
+  return useSupabaseTable<Member>("members", mapMember);
+}
+export function useSchedules() {
+  return useSupabaseTable<Schedule>("schedules", mapSchedule);
+}
 export function useWorkoutLogs() {
-  return useStore<WorkoutLog[]>(WORKOUT_LOGS_KEY, []);
+  return useSupabaseTable<WorkoutLog>("workout_logs", mapWorkoutLog);
 }
 
+// Seed is now done by the SQL migration. Keep no-op for back-compat.
 export function seedDemoData() {
-  if (typeof window === "undefined") return;
-
-  // Seed trainers if absent
-  if (!localStorage.getItem(TRAINERS_KEY)) {
-    const trainers: Trainer[] = [
-      { id: uid(), name: "김지훈 트레이너", phone: "010-1111-2222", memo: "근력 트레이닝 전문" },
-      { id: uid(), name: "이수민 트레이너", phone: "010-3333-4444", memo: "체형 교정 전문" },
-    ];
-    write(TRAINERS_KEY, trainers);
-
-    // If members already exist but have no trainerId, assign round-robin
-    const existing = read<Member[]>(MEMBERS_KEY, []);
-    if (existing.length > 0 && existing.some((m) => !m.trainerId)) {
-      const updated = existing.map((m, i) => ({
-        ...m,
-        trainerId: m.trainerId ?? trainers[i % trainers.length].id,
-      }));
-      write(MEMBERS_KEY, updated);
-    }
-  }
-
-  if (localStorage.getItem(MEMBERS_KEY)) return;
-
-  const trainers = read<Trainer[]>(TRAINERS_KEY, []);
-  const members: Member[] = [
-    { id: uid(), name: "김민수", phone: "010-1234-5678", joinedAt: "2025-01-15", totalSessions: 30, usedSessions: 12, trainerId: trainers[0]?.id },
-    { id: uid(), name: "이지은", phone: "010-2345-6789", joinedAt: "2025-03-02", totalSessions: 20, usedSessions: 8, trainerId: trainers[1]?.id },
-    { id: uid(), name: "박서준", phone: "010-3456-7890", joinedAt: "2025-04-10", totalSessions: 50, usedSessions: 25, trainerId: trainers[0]?.id },
-    { id: uid(), name: "최유나", phone: "010-4567-8901", joinedAt: "2025-05-01", totalSessions: 10, usedSessions: 3, trainerId: trainers[1]?.id },
-  ];
-  write(MEMBERS_KEY, members);
-
-  const today = new Date();
-  const schedules: Schedule[] = [];
-  for (let i = -7; i <= 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    const dateStr = d.toISOString().slice(0, 10);
-    const m = members[Math.floor(Math.random() * members.length)];
-    schedules.push({
-      id: uid(),
-      memberId: m.id,
-      date: dateStr,
-      time: ["10:00", "14:00", "18:00", "20:00"][Math.floor(Math.random() * 4)],
-      attended: i < 0 ? Math.random() > 0.2 : null,
-    });
-  }
-  write(SCHEDULES_KEY, schedules);
+  /* handled in DB migration */
 }
