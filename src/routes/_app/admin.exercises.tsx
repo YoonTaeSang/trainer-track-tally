@@ -277,12 +277,18 @@ function AdminExercisesPage() {
                       {e.youtube_url ?? "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(e)} title="수정">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(e.id)} title="삭제">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin ? (
+                        <>
+                          <Button size="icon" variant="ghost" onClick={() => openEdit(e)} title="수정">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => remove(e.id)} title="삭제">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">조회 전용</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
