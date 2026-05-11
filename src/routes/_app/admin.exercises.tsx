@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { BODY_PARTS, DIFFICULTIES, difficultyVariant } from "@/lib/exercises";
+import { useRole } from "@/hooks/use-role";
 
 export const Route = createFileRoute("/_app/admin/exercises")({
   component: AdminExercisesPage,
