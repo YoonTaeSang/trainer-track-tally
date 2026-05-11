@@ -35,6 +35,7 @@ function startOfWeek(d: Date) {
 function TrainerDetailPage() {
   const { trainerId } = Route.useParams();
   const navigate = useNavigate();
+  const { allowed } = useRoleGuard(["admin"]);
   const [trainers] = useTrainers();
   const [members] = useMembers();
   const [schedules] = useSchedules();
