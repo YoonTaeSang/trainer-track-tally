@@ -101,7 +101,7 @@ function LoginPage() {
         emailRedirectTo: `${window.location.origin}/login`,
         data: {
           name: signupName,
-          role: signupRole,
+          
           phone: signupPhone,
           birth_date: signupBirth,
           gender: signupGender,
