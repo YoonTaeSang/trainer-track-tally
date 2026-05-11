@@ -1,4 +1,8 @@
-export const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === "true";
+// Only honor the dev bypass flag when running a local dev build.
+// In production builds it is always disabled regardless of the env value.
+export const DEV_BYPASS =
+  import.meta.env.MODE === "development" &&
+  import.meta.env.VITE_DEV_BYPASS === "true";
 
 export type DevRole = "admin" | "trainer" | "member";
 

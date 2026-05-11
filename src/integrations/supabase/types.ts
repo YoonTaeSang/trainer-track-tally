@@ -258,6 +258,13 @@ export type Database = {
             referencedRelation: "trainers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "members_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       messages: {
@@ -539,7 +546,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      trainers_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
