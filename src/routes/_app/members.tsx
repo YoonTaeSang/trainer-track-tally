@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, CalendarPlus } from "lucide-react";
+import { Plus, Trash2, Pencil, CalendarPlus, BatteryCharging } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,28 @@ function MembersPage() {
   const [scheduleFor, setScheduleFor] = useState<Member | null>(null);
   const [schedDate, setSchedDate] = useState(new Date().toISOString().slice(0, 10));
   const [schedTime, setSchedTime] = useState("10:00");
+  const [chargeFor, setChargeFor] = useState<Member | null>(null);
+  const [chargeAmount, setChargeAmount] = useState(10);
+
+  const openCharge = (m: Member) => {
+    setChargeFor(m);
+    setChargeAmount(10);
+  };
+
+  const applyCharge = () => {
+    if (!chargeFor) return;
+    if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
+      toast.error("1회 이상의 충전 횟수를 입력해주세요.");
+      return;
+    }
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === chargeFor.id ? { ...m, totalSessions: m.totalSessions + chargeAmount } : m
+      )
+    );
+    toast.success(`${chargeFor.name} 회원에게 ${chargeAmount}회 충전되었습니다.`);
+    setChargeFor(null);
+  };
 
   const openSchedule = (m: Member) => {
     setScheduleFor(m);
@@ -202,6 +224,9 @@ function MembersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button size="icon" variant="ghost" onClick={() => openCharge(m)} title="세션 충전">
+                          <BatteryCharging className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => openSchedule(m)} title="일정 추가">
                           <CalendarPlus className="h-4 w-4" />
                         </Button>
@@ -239,6 +264,40 @@ function MembersPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setScheduleFor(null)}>취소</Button>
             <Button onClick={addSchedule}>저장</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!chargeFor} onOpenChange={(v) => !v && setChargeFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>세션 충전 — {chargeFor?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              현재 잔여: {chargeFor ? chargeFor.totalSessions - chargeFor.usedSessions : 0}회
+              {" / "}총 {chargeFor?.totalSessions ?? 0}회
+            </p>
+            <div className="grid gap-2">
+              <Label>충전 횟수</Label>
+              <Input
+                type="number"
+                min={1}
+                value={chargeAmount}
+                onChange={(e) => setChargeAmount(Number(e.target.value))}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[5, 10, 20, 30].map((n) => (
+                <Button key={n} type="button" size="sm" variant="outline" onClick={() => setChargeAmount(n)}>
+                  +{n}회
+                </Button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChargeFor(null)}>취소</Button>
+            <Button onClick={applyCharge}>충전</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

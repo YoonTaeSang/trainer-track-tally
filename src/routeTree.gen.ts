@@ -18,6 +18,7 @@ import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
+import { Route as AppAdminStatsRouteImport } from './routes/_app/admin.stats'
 import { Route as AppAdminTrainersTrainerIdRouteImport } from './routes/_app/admin.trainers.$trainerId'
 
 const MemberRoute = MemberRouteImport.update({
@@ -64,6 +65,11 @@ const AppAdminTrainersRoute = AppAdminTrainersRouteImport.update({
   path: '/trainers',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminStatsRoute = AppAdminStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminTrainersTrainerIdRoute =
   AppAdminTrainersTrainerIdRouteImport.update({
     id: '/$trainerId',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
+  '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
   '/': typeof AppIndexRoute
+  '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/members': typeof AppMembersRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/stats': typeof AppAdminStatsRoute
   '/_app/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/_app/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/calendar'
     | '/members'
+    | '/admin/stats'
     | '/admin/trainers'
     | '/admin/trainers/$trainerId'
   fileRoutesByTo: FileRoutesByTo
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/members'
     | '/'
+    | '/admin/stats'
     | '/admin/trainers'
     | '/admin/trainers/$trainerId'
   id:
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_app/calendar'
     | '/_app/members'
     | '/_app/'
+    | '/_app/admin/stats'
     | '/_app/admin/trainers'
     | '/_app/admin/trainers/$trainerId'
   fileRoutesById: FileRoutesById
@@ -214,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTrainersRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/stats': {
+      id: '/_app/admin/stats'
+      path: '/stats'
+      fullPath: '/admin/stats'
+      preLoaderRoute: typeof AppAdminStatsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/trainers/$trainerId': {
       id: '/_app/admin/trainers/$trainerId'
       path: '/$trainerId'
@@ -236,10 +255,12 @@ const AppAdminTrainersRouteWithChildren =
   AppAdminTrainersRoute._addFileChildren(AppAdminTrainersRouteChildren)
 
 interface AppAdminRouteChildren {
+  AppAdminStatsRoute: typeof AppAdminStatsRoute
   AppAdminTrainersRoute: typeof AppAdminTrainersRouteWithChildren
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminStatsRoute: AppAdminStatsRoute,
   AppAdminTrainersRoute: AppAdminTrainersRouteWithChildren,
 }
 
@@ -273,13 +294,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
