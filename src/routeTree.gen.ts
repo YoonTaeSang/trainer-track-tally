@@ -9,13 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MemberRouteImport } from './routes/member'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppMembersRouteImport } from './routes/_app/members'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 
+const MemberRoute = MemberRouteImport.update({
+  id: '/member',
+  path: '/member',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -45,16 +58,27 @@ const AppAttendanceRoute = AppAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
+  '/member': typeof MemberRoute
+  '/admin': typeof AppAdminRoute
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
+  '/member': typeof MemberRoute
+  '/admin': typeof AppAdminRoute
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
@@ -64,6 +88,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
+  '/member': typeof MemberRoute
+  '/_app/admin': typeof AppAdminRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/members': typeof AppMembersRoute
@@ -71,13 +98,32 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/attendance' | '/calendar' | '/members'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/login'
+    | '/member'
+    | '/admin'
+    | '/attendance'
+    | '/calendar'
+    | '/members'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/attendance' | '/calendar' | '/members' | '/'
+  to:
+    | '/auth'
+    | '/login'
+    | '/member'
+    | '/admin'
+    | '/attendance'
+    | '/calendar'
+    | '/members'
+    | '/'
   id:
     | '__root__'
     | '/_app'
     | '/auth'
+    | '/login'
+    | '/member'
+    | '/_app/admin'
     | '/_app/attendance'
     | '/_app/calendar'
     | '/_app/members'
@@ -87,10 +133,26 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LoginRoute: typeof LoginRoute
+  MemberRoute: typeof MemberRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/member': {
+      id: '/member'
+      path: '/member'
+      fullPath: '/member'
+      preLoaderRoute: typeof MemberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -133,10 +195,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppMembersRoute: typeof AppMembersRoute
@@ -144,6 +214,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppMembersRoute: AppMembersRoute,
@@ -155,7 +226,19 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  LoginRoute: LoginRoute,
+  MemberRoute: MemberRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
