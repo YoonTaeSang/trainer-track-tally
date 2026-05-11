@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTrainers, useMembers, useSchedules } from "@/lib/store";
+import { useRoleGuard } from "@/hooks/use-role-guard";
 
 export const Route = createFileRoute("/_app/admin/trainers/$trainerId")({
   component: TrainerDetailPage,
