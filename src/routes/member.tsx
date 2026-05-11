@@ -30,6 +30,31 @@ function MemberLayout() {
   const { role, loading: roleLoading } = useRole();
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
   const [unreadMsg, setUnreadMsg] = useState(0);
+  const [memberStatus, setMemberStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchStatus = async () => {
+      const { data } = await supabase
+        .from("members")
+        .select("status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setMemberStatus(data?.status ?? null);
+    };
+    fetchStatus();
+    const ch = supabase
+      .channel(`member_status:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "members", filter: `user_id=eq.${user.id}` },
+        fetchStatus
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user]);
 
   useEffect(() => {
     seedDemoData();
