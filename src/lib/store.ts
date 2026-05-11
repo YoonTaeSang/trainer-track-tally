@@ -175,7 +175,9 @@ type CacheEntry<L> = {
   data: L[];
   loaded: boolean;
   loading: boolean;
+  error: Error | null;
   listeners: Set<(d: L[]) => void>;
+  statusListeners: Set<() => void>;
   channel?: ReturnType<typeof supabase.channel>;
 };
 const caches = new Map<string, CacheEntry<any>>();
