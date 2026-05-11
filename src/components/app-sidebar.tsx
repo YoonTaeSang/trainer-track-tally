@@ -32,6 +32,8 @@ export function AppSidebar() {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { role } = useRole();
+  const items = allItems.filter((i) => !role || (i.roles as readonly string[]).includes(role));
 
   const handleLogout = async () => {
     await signOut();
