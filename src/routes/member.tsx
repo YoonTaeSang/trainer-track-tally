@@ -25,7 +25,6 @@ function MemberLayout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useRole();
-  const [profileName, setProfileName] = useState<string>("");
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
