@@ -78,6 +78,8 @@ function MembersPage() {
   const [schedTime, setSchedTime] = useState("10:00");
   const [chargeFor, setChargeFor] = useState<Member | null>(null);
   const [chargeAmount, setChargeAmount] = useState(10);
+  const [deactivateFor, setDeactivateFor] = useState<Member | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const assignTrainer = (memberId: string, trainerId: string) => {
     const tid = trainerId === "__none__" ? null : trainerId;
@@ -153,13 +155,25 @@ function MembersPage() {
     setOpen(false);
   };
 
-  const remove = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    toast.success("회원이 삭제되었습니다.");
+  const deactivate = (id: string) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status: "inactive" } : m))
+    );
+    toast.success("회원이 비활성화되었습니다.");
+    setDeactivateFor(null);
+  };
+
+  const reactivate = (id: string) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status: "active" } : m))
+    );
+    toast.success("회원이 다시 활성화되었습니다.");
   };
 
   const filtered = members
     .filter((m) => (isTrainer && currentTrainerId ? m.trainerId === currentTrainerId : true))
+    .filter((m) => (showInactive ? true : m.status !== "inactive"))
+    .filter((m) => m.status !== "pending" && m.status !== "rejected")
     .filter((m) => m.name.includes(search) || m.phone.includes(search));
 
   return (
