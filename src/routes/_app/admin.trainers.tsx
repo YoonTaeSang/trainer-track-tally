@@ -25,6 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useTrainers, useMembers, useSchedules, uid, type Trainer } from "@/lib/store";
+import { useRoleGuard } from "@/hooks/use-role-guard";
 
 export const Route = createFileRoute("/_app/admin/trainers")({
   component: TrainersPage,
@@ -35,6 +36,8 @@ const empty: Omit<Trainer, "id"> = { name: "", phone: "", memo: "" };
 
 function TrainersPage() {
   const navigate = useNavigate();
+  const { allowed } = useRoleGuard(["admin"]);
+  if (!allowed) return null;
   const [trainers, setTrainers] = useTrainers();
   const [members] = useMembers();
   const [schedules] = useSchedules();
