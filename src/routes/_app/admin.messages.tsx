@@ -39,12 +39,13 @@ function AdminMessages() {
         setPartners([]);
         return;
       }
-      const names = myMembers.map((m) => m.name);
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("name", names);
-      setPartners(((data ?? []) as Partner[]).filter((p) => p.id !== user?.id));
+      const ids = myMembers
+        .filter((m) => !!m.userId && m.userId !== user?.id)
+        .map((m) => ({ id: m.userId as string, name: m.name }));
+      // Deduplicate by id
+      const seen = new Set<string>();
+      const partners = ids.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+      setPartners(partners);
     };
     run();
   }, [myMembers, user]);

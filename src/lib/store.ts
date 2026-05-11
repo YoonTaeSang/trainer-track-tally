@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Trainer = {
   id: string;
+  userId?: string | null;
   name: string;
   phone: string;
   memo?: string;
@@ -15,6 +16,7 @@ export type MemberStatus = "pending" | "active" | "inactive" | "rejected";
 
 export type Member = {
   id: string;
+  userId?: string | null;
   name: string;
   phone: string;
   joinedAt: string;
@@ -77,12 +79,14 @@ export function uid() {
 const mapTrainer = {
   fromRow: (r: any): Trainer => ({
     id: r.id,
+    userId: r.user_id ?? null,
     name: r.name ?? "",
     phone: r.phone ?? "",
     memo: r.memo ?? "",
   }),
   toRow: (t: Trainer) => ({
     id: t.id,
+    user_id: t.userId ?? null,
     name: t.name ?? "",
     phone: t.phone ?? "",
     memo: t.memo ?? "",
@@ -92,6 +96,7 @@ const mapTrainer = {
 const mapMember = {
   fromRow: (r: any): Member => ({
     id: r.id,
+    userId: r.user_id ?? null,
     name: r.name ?? "",
     phone: r.phone ?? "",
     joinedAt: r.joined_at ?? "",
@@ -103,6 +108,7 @@ const mapMember = {
   }),
   toRow: (m: Member) => ({
     id: m.id,
+    user_id: m.userId ?? null,
     name: m.name ?? "",
     phone: m.phone ?? "",
     joined_at: m.joinedAt || new Date().toISOString().slice(0, 10),
@@ -307,7 +313,7 @@ export function usePublicTrainers(): readonly [Trainer[]] {
     const load = async () => {
       const { data: rows, error } = await (supabase as any)
         .from("trainers_public")
-        .select("id,name,created_at");
+        .select("id,user_id,name,created_at");
       if (cancelled) return;
       if (error) {
         console.error("[store:trainers_public] error", error);
@@ -316,6 +322,7 @@ export function usePublicTrainers(): readonly [Trainer[]] {
       setData(
         (rows ?? []).map((r: any) => ({
           id: r.id,
+          userId: r.user_id ?? null,
           name: r.name ?? "",
           phone: "",
           memo: "",
