@@ -53,12 +53,13 @@ function startOfWeek(d: Date) {
 function TrainerDetailPage() {
   const { trainerId } = Route.useParams();
   const navigate = useNavigate();
-  const { allowed } = useRoleGuard(["admin"]);
+  const { allowed, loading: roleLoading } = useRoleGuard(["admin"]);
   const [trainers] = useTrainers();
   const [members] = useMembers();
   const [schedules] = useSchedules();
-
-  if (!allowed) return null;
+  const trainersStatus = useTableStatus("trainers");
+  const membersStatus = useTableStatus("members");
+  const schedulesStatus = useTableStatus("schedules");
 
   const trainer = trainers.find((t) => t.id === trainerId);
   const myMembers = useMemo(
@@ -78,7 +79,6 @@ function TrainerDetailPage() {
     [weekStart]
   );
 
-  // Build cell map: key = `${dateStr}|${hour}` -> array of {memberName, time}
   const grid = useMemo(() => {
     const map = new Map<string, { name: string; time: string }[]>();
     const memberById = new Map(members.map((m) => [m.id, m]));
@@ -96,6 +96,43 @@ function TrainerDetailPage() {
     }
     return map;
   }, [schedules, myMemberIds, members, weekDates]);
+
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 권한 확인 중...
+      </div>
+    );
+  }
+  if (!allowed) return null;
+
+  const loadError = trainersStatus.error ?? membersStatus.error ?? schedulesStatus.error;
+  if (loadError) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+          <div className="text-sm font-medium">데이터를 불러오지 못했습니다.</div>
+          <pre className="max-w-full overflow-auto rounded bg-muted p-3 text-left text-xs text-muted-foreground">
+            {loadError.message}
+          </pre>
+          <Button size="sm" onClick={() => refetchAllTables()}>다시 시도</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const initialLoading =
+    (!trainersStatus.loaded && trainersStatus.loading) ||
+    (!membersStatus.loaded && membersStatus.loading) ||
+    (!schedulesStatus.loaded && schedulesStatus.loading);
+  if (initialLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 트레이너 정보를 불러오는 중...
+      </div>
+    );
+  }
 
   if (!trainer) {
     return (
