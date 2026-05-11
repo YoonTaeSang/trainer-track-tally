@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Megaphone, Sparkles, FileSignature } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
@@ -14,13 +15,33 @@ export const Route = createFileRoute("/member/home")({
   head: () => ({ meta: [{ title: "홈 | PT Studio" }] }),
 });
 
+type NoticeRow = {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  category: string;
+  read: boolean;
+};
+
 function MemberHome() {
   const { user } = useAuth();
   const [members] = useMembers();
   const [schedules] = useSchedules();
   const [trainers] = useTrainers();
   const [profileName, setProfileName] = useState<string>("");
-  const [latestNotice, setLatestNotice] = useState<{ title: string; body: string; created_at: string } | null>(null);
+  const [notices, setNotices] = useState<NoticeRow[]>([]);
+
+  const loadNotices = async (uid: string) => {
+    const { data } = await supabase
+      .from("notifications")
+      .select("id, title, body, created_at, category, read")
+      .eq("user_id", uid)
+      .eq("type", "trainer_message")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setNotices((data ?? []) as NoticeRow[]);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -31,16 +52,33 @@ function MemberHome() {
       .maybeSingle()
       .then(({ data }) => setProfileName(data?.name ?? ""));
 
-    supabase
-      .from("notifications")
-      .select("title, body, created_at")
-      .eq("user_id", user.id)
-      .eq("type", "trainer_message")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => setLatestNotice(data ?? null));
+    loadNotices(user.id);
+    const ch = supabase
+      .channel(`home_notices:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => loadNotices(user.id)
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user]);
+
+  const gymNotices = useMemo(() => notices.filter((n) => n.category === "gym"), [notices]);
+  const trainerNotices = useMemo(() => notices.filter((n) => n.category === "trainer"), [notices]);
+  const gymUnread = gymNotices.filter((n) => !n.read).length;
+  const trainerUnread = trainerNotices.filter((n) => !n.read).length;
+
+  const markCategoryRead = async (category: "gym" | "trainer") => {
+    if (!user) return;
+    const ids = notices.filter((n) => n.category === category && !n.read).map((n) => n.id);
+    if (ids.length === 0) return;
+    setNotices((p) => p.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)));
+    await supabase.from("notifications").update({ read: true }).in("id", ids);
+  };
+
 
   const myMember = useMemo(() => {
     if (!profileName) return members[0];
