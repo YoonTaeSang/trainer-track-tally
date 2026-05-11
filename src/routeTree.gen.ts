@@ -16,6 +16,7 @@ import { Route as MemberIndexRouteImport } from './routes/member.index'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as MemberRecordsRouteImport } from './routes/member.records'
 import { Route as MemberProfileRouteImport } from './routes/member.profile'
+import { Route as MemberMessagesRouteImport } from './routes/member.messages'
 import { Route as MemberHomeRouteImport } from './routes/member.home'
 import { Route as MemberExercisesRouteImport } from './routes/member.exercises'
 import { Route as MemberBookingRouteImport } from './routes/member.booking'
@@ -27,7 +28,9 @@ import { Route as MemberExercisesExerciseIdRouteImport } from './routes/member.e
 import { Route as AppAdminWorkoutsRouteImport } from './routes/_app/admin.workouts'
 import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
 import { Route as AppAdminStatsRouteImport } from './routes/_app/admin.stats'
+import { Route as AppAdminRequestsRouteImport } from './routes/_app/admin.requests'
 import { Route as AppAdminNoticeRouteImport } from './routes/_app/admin.notice'
+import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
 import { Route as AppAdminExercisesRouteImport } from './routes/_app/admin.exercises'
 import { Route as AppAdminTrainersTrainerIdRouteImport } from './routes/_app/admin.trainers.$trainerId'
 
@@ -63,6 +66,11 @@ const MemberRecordsRoute = MemberRecordsRouteImport.update({
 const MemberProfileRoute = MemberProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberMessagesRoute = MemberMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => MemberRoute,
 } as any)
 const MemberHomeRoute = MemberHomeRouteImport.update({
@@ -121,9 +129,19 @@ const AppAdminStatsRoute = AppAdminStatsRouteImport.update({
   path: '/admin/stats',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRequestsRoute = AppAdminRequestsRouteImport.update({
+  id: '/admin/requests',
+  path: '/admin/requests',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminNoticeRoute = AppAdminNoticeRouteImport.update({
   id: '/admin/notice',
   path: '/admin/notice',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
+  id: '/admin/messages',
+  path: '/admin/messages',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminExercisesRoute = AppAdminExercisesRouteImport.update({
@@ -148,11 +166,14 @@ export interface FileRoutesByFullPath {
   '/member/booking': typeof MemberBookingRoute
   '/member/exercises': typeof MemberExercisesRouteWithChildren
   '/member/home': typeof MemberHomeRoute
+  '/member/messages': typeof MemberMessagesRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
   '/member/': typeof MemberIndexRoute
   '/admin/exercises': typeof AppAdminExercisesRoute
+  '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notice': typeof AppAdminNoticeRoute
+  '/admin/requests': typeof AppAdminRequestsRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/workouts': typeof AppAdminWorkoutsRoute
@@ -168,12 +189,15 @@ export interface FileRoutesByTo {
   '/member/booking': typeof MemberBookingRoute
   '/member/exercises': typeof MemberExercisesRouteWithChildren
   '/member/home': typeof MemberHomeRoute
+  '/member/messages': typeof MemberMessagesRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
   '/': typeof AppIndexRoute
   '/member': typeof MemberIndexRoute
   '/admin/exercises': typeof AppAdminExercisesRoute
+  '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notice': typeof AppAdminNoticeRoute
+  '/admin/requests': typeof AppAdminRequestsRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/workouts': typeof AppAdminWorkoutsRoute
@@ -192,12 +216,15 @@ export interface FileRoutesById {
   '/member/booking': typeof MemberBookingRoute
   '/member/exercises': typeof MemberExercisesRouteWithChildren
   '/member/home': typeof MemberHomeRoute
+  '/member/messages': typeof MemberMessagesRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
   '/_app/': typeof AppIndexRoute
   '/member/': typeof MemberIndexRoute
   '/_app/admin/exercises': typeof AppAdminExercisesRoute
+  '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/notice': typeof AppAdminNoticeRoute
+  '/_app/admin/requests': typeof AppAdminRequestsRoute
   '/_app/admin/stats': typeof AppAdminStatsRoute
   '/_app/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/_app/admin/workouts': typeof AppAdminWorkoutsRoute
@@ -217,11 +244,14 @@ export interface FileRouteTypes {
     | '/member/booking'
     | '/member/exercises'
     | '/member/home'
+    | '/member/messages'
     | '/member/profile'
     | '/member/records'
     | '/member/'
     | '/admin/exercises'
+    | '/admin/messages'
     | '/admin/notice'
+    | '/admin/requests'
     | '/admin/stats'
     | '/admin/trainers'
     | '/admin/workouts'
@@ -237,12 +267,15 @@ export interface FileRouteTypes {
     | '/member/booking'
     | '/member/exercises'
     | '/member/home'
+    | '/member/messages'
     | '/member/profile'
     | '/member/records'
     | '/'
     | '/member'
     | '/admin/exercises'
+    | '/admin/messages'
     | '/admin/notice'
+    | '/admin/requests'
     | '/admin/stats'
     | '/admin/trainers'
     | '/admin/workouts'
@@ -260,12 +293,15 @@ export interface FileRouteTypes {
     | '/member/booking'
     | '/member/exercises'
     | '/member/home'
+    | '/member/messages'
     | '/member/profile'
     | '/member/records'
     | '/_app/'
     | '/member/'
     | '/_app/admin/exercises'
+    | '/_app/admin/messages'
     | '/_app/admin/notice'
+    | '/_app/admin/requests'
     | '/_app/admin/stats'
     | '/_app/admin/trainers'
     | '/_app/admin/workouts'
@@ -329,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/member/profile'
       preLoaderRoute: typeof MemberProfileRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/messages': {
+      id: '/member/messages'
+      path: '/messages'
+      fullPath: '/member/messages'
+      preLoaderRoute: typeof MemberMessagesRouteImport
       parentRoute: typeof MemberRoute
     }
     '/member/home': {
@@ -408,11 +451,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminStatsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/requests': {
+      id: '/_app/admin/requests'
+      path: '/admin/requests'
+      fullPath: '/admin/requests'
+      preLoaderRoute: typeof AppAdminRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/notice': {
       id: '/_app/admin/notice'
       path: '/admin/notice'
       fullPath: '/admin/notice'
       preLoaderRoute: typeof AppAdminNoticeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/messages': {
+      id: '/_app/admin/messages'
+      path: '/admin/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AppAdminMessagesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/exercises': {
@@ -449,7 +506,9 @@ interface AppRouteChildren {
   AppMembersRoute: typeof AppMembersRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminExercisesRoute: typeof AppAdminExercisesRoute
+  AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminNoticeRoute: typeof AppAdminNoticeRoute
+  AppAdminRequestsRoute: typeof AppAdminRequestsRoute
   AppAdminStatsRoute: typeof AppAdminStatsRoute
   AppAdminTrainersRoute: typeof AppAdminTrainersRouteWithChildren
   AppAdminWorkoutsRoute: typeof AppAdminWorkoutsRoute
@@ -462,7 +521,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppMembersRoute: AppMembersRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminExercisesRoute: AppAdminExercisesRoute,
+  AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminNoticeRoute: AppAdminNoticeRoute,
+  AppAdminRequestsRoute: AppAdminRequestsRoute,
   AppAdminStatsRoute: AppAdminStatsRoute,
   AppAdminTrainersRoute: AppAdminTrainersRouteWithChildren,
   AppAdminWorkoutsRoute: AppAdminWorkoutsRoute,
@@ -487,6 +548,7 @@ interface MemberRouteChildren {
   MemberBookingRoute: typeof MemberBookingRoute
   MemberExercisesRoute: typeof MemberExercisesRouteWithChildren
   MemberHomeRoute: typeof MemberHomeRoute
+  MemberMessagesRoute: typeof MemberMessagesRoute
   MemberProfileRoute: typeof MemberProfileRoute
   MemberRecordsRoute: typeof MemberRecordsRoute
   MemberIndexRoute: typeof MemberIndexRoute
@@ -496,6 +558,7 @@ const MemberRouteChildren: MemberRouteChildren = {
   MemberBookingRoute: MemberBookingRoute,
   MemberExercisesRoute: MemberExercisesRouteWithChildren,
   MemberHomeRoute: MemberHomeRoute,
+  MemberMessagesRoute: MemberMessagesRoute,
   MemberProfileRoute: MemberProfileRoute,
   MemberRecordsRoute: MemberRecordsRoute,
   MemberIndexRoute: MemberIndexRoute,
