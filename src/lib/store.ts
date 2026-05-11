@@ -79,12 +79,14 @@ export function uid() {
 const mapTrainer = {
   fromRow: (r: any): Trainer => ({
     id: r.id,
+    userId: r.user_id ?? null,
     name: r.name ?? "",
     phone: r.phone ?? "",
     memo: r.memo ?? "",
   }),
   toRow: (t: Trainer) => ({
     id: t.id,
+    user_id: t.userId ?? null,
     name: t.name ?? "",
     phone: t.phone ?? "",
     memo: t.memo ?? "",
@@ -94,6 +96,7 @@ const mapTrainer = {
 const mapMember = {
   fromRow: (r: any): Member => ({
     id: r.id,
+    userId: r.user_id ?? null,
     name: r.name ?? "",
     phone: r.phone ?? "",
     joinedAt: r.joined_at ?? "",
@@ -105,6 +108,7 @@ const mapMember = {
   }),
   toRow: (m: Member) => ({
     id: m.id,
+    user_id: m.userId ?? null,
     name: m.name ?? "",
     phone: m.phone ?? "",
     joined_at: m.joinedAt || new Date().toISOString().slice(0, 10),
