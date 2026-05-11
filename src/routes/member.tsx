@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { seedDemoData } from "@/lib/store";
