@@ -16,6 +16,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMembers, useSchedules } from "@/lib/store";
+import { useRole } from "@/hooks/use-role";
+import { useCurrentTrainer } from "@/hooks/use-current-trainer";
 
 export const Route = createFileRoute("/_app/attendance")({
   component: AttendancePage,
