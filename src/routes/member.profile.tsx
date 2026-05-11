@@ -23,7 +23,6 @@ import {
   KeyRound,
   Plus,
   Trash2,
-  Target,
   Ruler,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,6 +30,7 @@ import { useMembers, useTrainers } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { GoalsSection } from "@/components/goals-section";
 
 export const Route = createFileRoute("/member/profile")({
   component: MemberProfile,
