@@ -17,6 +17,8 @@ import { Route as AppMembersRouteImport } from './routes/_app/members'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
+import { Route as AppAdminTrainersTrainerIdRouteImport } from './routes/_app/admin.trainers.$trainerId'
 
 const MemberRoute = MemberRouteImport.update({
   id: '/member',
@@ -57,35 +59,52 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminTrainersRoute = AppAdminTrainersRouteImport.update({
+  id: '/trainers',
+  path: '/trainers',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminTrainersTrainerIdRoute =
+  AppAdminTrainersTrainerIdRouteImport.update({
+    id: '/$trainerId',
+    path: '/$trainerId',
+    getParentRoute: () => AppAdminTrainersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
-  '/admin': typeof AppAdminRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
+  '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
+  '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
-  '/admin': typeof AppAdminRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
   '/': typeof AppIndexRoute
+  '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
+  '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/member': typeof MemberRoute
-  '/_app/admin': typeof AppAdminRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/members': typeof AppMembersRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/trainers': typeof AppAdminTrainersRouteWithChildren
+  '/_app/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +116,8 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/calendar'
     | '/members'
+    | '/admin/trainers'
+    | '/admin/trainers/$trainerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -106,6 +127,8 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/members'
     | '/'
+    | '/admin/trainers'
+    | '/admin/trainers/$trainerId'
   id:
     | '__root__'
     | '/_app'
@@ -116,6 +139,8 @@ export interface FileRouteTypes {
     | '/_app/calendar'
     | '/_app/members'
     | '/_app/'
+    | '/_app/admin/trainers'
+    | '/_app/admin/trainers/$trainerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,11 +207,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/trainers': {
+      id: '/_app/admin/trainers'
+      path: '/trainers'
+      fullPath: '/admin/trainers'
+      preLoaderRoute: typeof AppAdminTrainersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/trainers/$trainerId': {
+      id: '/_app/admin/trainers/$trainerId'
+      path: '/$trainerId'
+      fullPath: '/admin/trainers/$trainerId'
+      preLoaderRoute: typeof AppAdminTrainersTrainerIdRouteImport
+      parentRoute: typeof AppAdminTrainersRoute
+    }
   }
 }
 
+interface AppAdminTrainersRouteChildren {
+  AppAdminTrainersTrainerIdRoute: typeof AppAdminTrainersTrainerIdRoute
+}
+
+const AppAdminTrainersRouteChildren: AppAdminTrainersRouteChildren = {
+  AppAdminTrainersTrainerIdRoute: AppAdminTrainersTrainerIdRoute,
+}
+
+const AppAdminTrainersRouteWithChildren =
+  AppAdminTrainersRoute._addFileChildren(AppAdminTrainersRouteChildren)
+
+interface AppAdminRouteChildren {
+  AppAdminTrainersRoute: typeof AppAdminTrainersRouteWithChildren
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminTrainersRoute: AppAdminTrainersRouteWithChildren,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRoute
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppMembersRoute: typeof AppMembersRoute
@@ -194,7 +256,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRoute,
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppAttendanceRoute: AppAttendanceRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppMembersRoute: AppMembersRoute,
@@ -211,3 +273,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

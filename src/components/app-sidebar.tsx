@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Calendar, ClipboardCheck, Dumbbell, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, ClipboardCheck, Dumbbell, LogOut, UserCog } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 const items = [
   { title: "대시보드", url: "/admin", icon: LayoutDashboard },
   { title: "회원 관리", url: "/members", icon: Users },
+  { title: "트레이너 관리", url: "/admin/trainers", icon: UserCog },
   { title: "일정 캘린더", url: "/calendar", icon: Calendar },
   { title: "출석 체크", url: "/attendance", icon: ClipboardCheck },
 ] as const;

@@ -1,13 +1,21 @@
 // Demo localStorage store for PT shop management
 import { useEffect, useState, useCallback } from "react";
 
+export type Trainer = {
+  id: string;
+  name: string;
+  phone: string;
+  memo?: string;
+};
+
 export type Member = {
   id: string;
   name: string;
   phone: string;
   joinedAt: string; // ISO date
-  totalSessions: number; // 총 등록 세션
-  usedSessions: number; // 사용한 세션
+  totalSessions: number;
+  usedSessions: number;
+  trainerId?: string | null;
   memo?: string;
 };
 
@@ -21,6 +29,7 @@ export type Schedule = {
 
 const MEMBERS_KEY = "pt_members";
 const SCHEDULES_KEY = "pt_schedules";
+const TRAINERS_KEY = "pt_trainers";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -78,15 +87,40 @@ export function useSchedules() {
   return useStore<Schedule[]>(SCHEDULES_KEY, []);
 }
 
+export function useTrainers() {
+  return useStore<Trainer[]>(TRAINERS_KEY, []);
+}
+
 export function seedDemoData() {
   if (typeof window === "undefined") return;
+
+  // Seed trainers if absent
+  if (!localStorage.getItem(TRAINERS_KEY)) {
+    const trainers: Trainer[] = [
+      { id: uid(), name: "김지훈 트레이너", phone: "010-1111-2222", memo: "근력 트레이닝 전문" },
+      { id: uid(), name: "이수민 트레이너", phone: "010-3333-4444", memo: "체형 교정 전문" },
+    ];
+    write(TRAINERS_KEY, trainers);
+
+    // If members already exist but have no trainerId, assign round-robin
+    const existing = read<Member[]>(MEMBERS_KEY, []);
+    if (existing.length > 0 && existing.some((m) => !m.trainerId)) {
+      const updated = existing.map((m, i) => ({
+        ...m,
+        trainerId: m.trainerId ?? trainers[i % trainers.length].id,
+      }));
+      write(MEMBERS_KEY, updated);
+    }
+  }
+
   if (localStorage.getItem(MEMBERS_KEY)) return;
 
+  const trainers = read<Trainer[]>(TRAINERS_KEY, []);
   const members: Member[] = [
-    { id: uid(), name: "김민수", phone: "010-1234-5678", joinedAt: "2025-01-15", totalSessions: 30, usedSessions: 12 },
-    { id: uid(), name: "이지은", phone: "010-2345-6789", joinedAt: "2025-03-02", totalSessions: 20, usedSessions: 8 },
-    { id: uid(), name: "박서준", phone: "010-3456-7890", joinedAt: "2025-04-10", totalSessions: 50, usedSessions: 25 },
-    { id: uid(), name: "최유나", phone: "010-4567-8901", joinedAt: "2025-05-01", totalSessions: 10, usedSessions: 3 },
+    { id: uid(), name: "김민수", phone: "010-1234-5678", joinedAt: "2025-01-15", totalSessions: 30, usedSessions: 12, trainerId: trainers[0]?.id },
+    { id: uid(), name: "이지은", phone: "010-2345-6789", joinedAt: "2025-03-02", totalSessions: 20, usedSessions: 8, trainerId: trainers[1]?.id },
+    { id: uid(), name: "박서준", phone: "010-3456-7890", joinedAt: "2025-04-10", totalSessions: 50, usedSessions: 25, trainerId: trainers[0]?.id },
+    { id: uid(), name: "최유나", phone: "010-4567-8901", joinedAt: "2025-05-01", totalSessions: 10, usedSessions: 3, trainerId: trainers[1]?.id },
   ];
   write(MEMBERS_KEY, members);
 
