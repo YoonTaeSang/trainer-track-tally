@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { seedDemoData } from "@/lib/store";
 import { DEV_BYPASS } from "@/lib/dev-mode";
-import { Button } from "@/components/ui/button";
 import { Dumbbell, Home, Calendar, Activity, ClipboardList, User } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
 
