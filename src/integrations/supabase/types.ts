@@ -106,6 +106,92 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_progress: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          memo: string | null
+          recorded_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          memo?: string | null
+          recorded_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          memo?: string | null
+          recorded_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_progress_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          created_at: string
+          current_value: number | null
+          goal_type: string
+          id: string
+          start_date: string
+          start_value: number | null
+          target_date: string | null
+          target_value: number | null
+          title: string
+          trainer_comment: string | null
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number | null
+          goal_type: string
+          id?: string
+          start_date?: string
+          start_value?: number | null
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          trainer_comment?: string | null
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number | null
+          goal_type?: string
+          id?: string
+          start_date?: string
+          start_value?: number | null
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          trainer_comment?: string | null
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_goals: {
         Row: {
           goal_text: string
@@ -121,6 +207,33 @@ export type Database = {
           goal_text?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          recipient_id?: string
+          sender_id?: string
         }
         Relationships: []
       }
@@ -172,6 +285,60 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+        }
+        Relationships: []
+      }
+      schedule_requests: {
+        Row: {
+          created_at: string
+          id: string
+          member_name: string
+          member_user_id: string
+          original_date: string
+          original_schedule_id: string | null
+          original_time: string
+          reject_reason: string | null
+          request_type: string
+          requested_date: string | null
+          requested_time: string | null
+          status: string
+          trainer_name: string | null
+          trainer_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_name: string
+          member_user_id: string
+          original_date: string
+          original_schedule_id?: string | null
+          original_time: string
+          reject_reason?: string | null
+          request_type: string
+          requested_date?: string | null
+          requested_time?: string | null
+          status?: string
+          trainer_name?: string | null
+          trainer_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_name?: string
+          member_user_id?: string
+          original_date?: string
+          original_schedule_id?: string | null
+          original_time?: string
+          reject_reason?: string | null
+          request_type?: string
+          requested_date?: string | null
+          requested_time?: string | null
+          status?: string
+          trainer_name?: string | null
+          trainer_user_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

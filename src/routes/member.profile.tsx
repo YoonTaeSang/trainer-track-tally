@@ -23,7 +23,6 @@ import {
   KeyRound,
   Plus,
   Trash2,
-  Target,
   Ruler,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,6 +30,7 @@ import { useMembers, useTrainers } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { GoalsSection } from "@/components/goals-section";
 
 export const Route = createFileRoute("/member/profile")({
   component: MemberProfile,
@@ -72,8 +72,7 @@ function MemberProfile() {
     new Date().toISOString().slice(0, 10)
   );
 
-  const [goal, setGoal] = useState("");
-  const [goalSaving, setGoalSaving] = useState(false);
+  // (legacy goal_text removed; structured goals managed via GoalsSection)
 
   const [pwOpen, setPwOpen] = useState(false);
   const [newPw, setNewPw] = useState("");
@@ -109,16 +108,6 @@ function MemberProfile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Goal
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("member_goals")
-      .select("goal_text")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setGoal(data?.goal_text ?? ""));
-  }, [user]);
 
   const myMember = useMemo(
     () => (name ? members.find((m) => m.name === name) : undefined),
@@ -158,16 +147,6 @@ function MemberProfile() {
     setMetrics((p) => p.filter((m) => m.id !== id));
   };
 
-  const saveGoal = async () => {
-    if (!user) return;
-    setGoalSaving(true);
-    const { error } = await supabase
-      .from("member_goals")
-      .upsert({ user_id: user.id, goal_text: goal.slice(0, 200) });
-    setGoalSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("목표가 저장되었습니다");
-  };
 
   const changePassword = async () => {
     const parsed = passwordSchema.safeParse(newPw);
@@ -233,26 +212,8 @@ function MemberProfile() {
         </CardContent>
       </Card>
 
-      {/* Goal */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-1.5 text-sm">
-            <Target className="h-4 w-4" /> 목표
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Textarea
-            value={goal}
-            onChange={(e) => setGoal(e.target.value.slice(0, 200))}
-            placeholder="예: 체지방 감량 5kg"
-            rows={2}
-            maxLength={200}
-          />
-          <Button size="sm" onClick={saveGoal} disabled={goalSaving} className="w-full">
-            저장
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Goals (structured) */}
+      {user && <GoalsSection userId={user.id} />}
 
       {/* Body metrics */}
       <Card>

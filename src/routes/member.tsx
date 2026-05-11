@@ -4,8 +4,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { seedDemoData } from "@/lib/store";
 import { DEV_BYPASS } from "@/lib/dev-mode";
-import { Dumbbell, Home, Calendar, Activity, ClipboardList, User } from "lucide-react";
+import { Dumbbell, Home, Calendar, Activity, ClipboardList, User, MessageCircle } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/member")({
   component: MemberLayout,
@@ -16,6 +18,7 @@ const tabs = [
   { to: "/member/home", label: "홈", icon: Home },
   { to: "/member/booking", label: "예약", icon: Calendar },
   { to: "/member/exercises", label: "운동", icon: Activity },
+  { to: "/member/messages", label: "메시지", icon: MessageCircle },
   { to: "/member/records", label: "기록", icon: ClipboardList },
   { to: "/member/profile", label: "내정보", icon: User },
 ] as const;
@@ -25,10 +28,35 @@ function MemberLayout() {
   const { user, loading: authLoading } = useAuth();
   const { role, loading: roleLoading } = useRole();
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
+  const [unreadMsg, setUnreadMsg] = useState(0);
 
   useEffect(() => {
     seedDemoData();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUnread = async () => {
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", user.id)
+        .eq("read", false);
+      setUnreadMsg(count ?? 0);
+    };
+    fetchUnread();
+    const ch = supabase
+      .channel(`member_msg_unread:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        fetchUnread
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (DEV_BYPASS) return;
@@ -71,19 +99,25 @@ function MemberLayout() {
         </main>
 
         <nav className="sticky bottom-0 z-10 border-t bg-background/95 backdrop-blur">
-          <ul className="grid grid-cols-5">
+          <ul className="grid grid-cols-6">
             {tabs.map((t) => {
               const active = currentPath === t.to || (t.to === "/member/home" && currentPath === "/member");
               const Icon = t.icon;
+              const showBadge = t.to === "/member/messages" && unreadMsg > 0;
               return (
                 <li key={t.to}>
                   <Link
                     to={t.to}
-                    className={`flex flex-col items-center gap-0.5 py-2 text-[11px] transition-colors ${
+                    className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] transition-colors ${
                       active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
+                    {showBadge && (
+                      <span className="absolute right-2 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                        {unreadMsg}
+                      </span>
+                    )}
                     <span>{t.label}</span>
                   </Link>
                 </li>

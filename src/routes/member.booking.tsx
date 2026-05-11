@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,20 +11,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useSchedules, useTrainers, uid } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingRequestButtons } from "@/components/booking-request-button";
 
 export const Route = createFileRoute("/member/booking")({
   component: BookingPage,
   head: () => ({ meta: [{ title: "예약 | PT Studio" }] }),
 });
 
-// 트레이너 운영 시간: 09:00 ~ 21:00 (1시간 단위) 모든 요일
 const OPERATING_HOURS = Array.from({ length: 13 }, (_, i) => `${String(i + 9).padStart(2, "0")}:00`);
-
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
 function toDateStr(d: Date) {
@@ -34,12 +33,26 @@ function toDateStr(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
+type RequestRow = {
+  id: string;
+  original_schedule_id: string | null;
+  request_type: "cancel" | "change";
+  requested_date: string | null;
+  requested_time: string | null;
+  status: "pending" | "approved" | "rejected";
+  reject_reason: string | null;
+  original_date: string;
+  original_time: string;
+  created_at: string;
+};
+
 function BookingPage() {
   const { user } = useAuth();
   const [members, setMembers] = useMembers();
   const [schedules, setSchedules] = useSchedules();
   const [trainers] = useTrainers();
   const [profileName, setProfileName] = useState("");
+  const [requests, setRequests] = useState<RequestRow[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +64,39 @@ function BookingPage() {
       .then(({ data }) => setProfileName(data?.name ?? ""));
   }, [user]);
 
+  const loadRequests = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("schedule_requests")
+      .select(
+        "id, original_schedule_id, request_type, requested_date, requested_time, status, reject_reason, original_date, original_time, created_at"
+      )
+      .eq("member_user_id", user.id)
+      .order("created_at", { ascending: false });
+    setRequests((data ?? []) as RequestRow[]);
+  }, [user]);
+
+  useEffect(() => {
+    loadRequests();
+    if (!user) return;
+    const ch = supabase
+      .channel(`booking_requests:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "schedule_requests",
+          filter: `member_user_id=eq.${user.id}`,
+        },
+        () => loadRequests()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, loadRequests]);
+
   const myMember = useMemo(() => {
     if (!profileName) return members[0];
     return members.find((m) => m.name === profileName) ?? members[0];
@@ -61,7 +107,6 @@ function BookingPage() {
     [myMember, trainers]
   );
 
-  // 다음 14일치 날짜
   const dates = useMemo(() => {
     const arr: Date[] = [];
     const today = new Date();
@@ -77,7 +122,6 @@ function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
   const [pendingSlot, setPendingSlot] = useState<string | null>(null);
 
-  // 내 트레이너에게 이미 잡힌 시간 (모든 회원 합산)
   const takenTimes = useMemo(() => {
     if (!myTrainer) return new Set<string>();
     const trainerMemberIds = new Set(
@@ -117,6 +161,25 @@ function BookingPage() {
     setPendingSlot(null);
   };
 
+  // Map original_schedule_id -> latest pending request
+  const pendingByScheduleId = useMemo(() => {
+    const m = new Map<string, RequestRow>();
+    for (const r of requests) {
+      if (r.status === "pending" && r.original_schedule_id) {
+        if (!m.has(r.original_schedule_id)) m.set(r.original_schedule_id, r);
+      }
+    }
+    return m;
+  }, [requests]);
+
+  const myUpcomingSchedules = useMemo(() => {
+    if (!myMember) return [];
+    const todayStr = toDateStr(new Date());
+    return schedules
+      .filter((s) => s.memberId === myMember.id && s.attended === null && s.date >= todayStr)
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  }, [schedules, myMember]);
+
   if (!myMember) {
     return (
       <Card>
@@ -132,12 +195,74 @@ function BookingPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">PT 예약</h1>
-          <p className="text-xs text-muted-foreground">
-            담당: {myTrainer?.name ?? "미배정"}
-          </p>
+          <p className="text-xs text-muted-foreground">담당: {myTrainer?.name ?? "미배정"}</p>
         </div>
         <Badge variant={remain <= 2 ? "destructive" : "secondary"}>잔여 {remain}회</Badge>
       </div>
+
+      {/* My upcoming schedules with cancel/change */}
+      {myUpcomingSchedules.length > 0 && (
+        <Card>
+          <CardContent className="space-y-2 pt-4">
+            <p className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <CalendarClock className="h-3 w-3" /> 예정된 내 예약
+            </p>
+            {myUpcomingSchedules.map((s) => {
+              const pending = pendingByScheduleId.get(s.id);
+              return (
+                <div key={s.id} className="rounded-lg border p-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {s.date} {s.time}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {myTrainer?.name ?? "트레이너"}
+                      </p>
+                    </div>
+                    {pending ? (
+                      <Badge variant="secondary">
+                        승인 대기중 ({pending.request_type === "cancel" ? "취소" : "변경"})
+                      </Badge>
+                    ) : (
+                      user && (
+                        <BookingRequestButtons
+                          schedule={s}
+                          member={myMember}
+                          trainer={myTrainer}
+                          userId={user.id}
+                          onSubmitted={loadRequests}
+                        />
+                      )
+                    )}
+                  </div>
+                  {pending && (
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      승인 처리가 지연될 경우, 트레이너에게 개별문의해 주시기 바랍니다.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 최근 거절된 신청 */}
+      {requests.filter((r) => r.status === "rejected").slice(0, 2).map((r) => (
+        <div
+          key={r.id}
+          className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-xs"
+        >
+          <p className="font-semibold text-destructive">
+            {r.request_type === "cancel" ? "취소" : "변경"} 신청 거절됨
+          </p>
+          <p className="text-muted-foreground">
+            {r.original_date} {r.original_time}
+          </p>
+          {r.reject_reason && <p className="mt-1">사유: {r.reject_reason}</p>}
+        </div>
+      ))}
 
       {/* 날짜 가로 스크롤 */}
       <div className="-mx-4 overflow-x-auto px-4">
@@ -158,7 +283,11 @@ function BookingPage() {
                     : "border-border bg-background hover:bg-accent"
                 }`}
               >
-                <span className={`text-[10px] ${active ? "opacity-90" : isWeekend ? "text-destructive" : "text-muted-foreground"}`}>
+                <span
+                  className={`text-[10px] ${
+                    active ? "opacity-90" : isWeekend ? "text-destructive" : "text-muted-foreground"
+                  }`}
+                >
                   {dow}
                 </span>
                 <span className="text-base font-bold">{d.getDate()}</span>
@@ -171,7 +300,6 @@ function BookingPage() {
         </div>
       </div>
 
-      {/* 슬롯 목록 */}
       <Card>
         <CardContent className="space-y-2 pt-4">
           <p className="mb-1 text-xs font-medium text-muted-foreground">
