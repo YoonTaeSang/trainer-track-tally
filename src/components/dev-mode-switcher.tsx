@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { DEV_BYPASS } from "@/lib/dev-mode";
 
 export function DevModeSwitcher() {
-  if (!DEV_BYPASS) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!DEV_BYPASS || !mounted) return null;
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 rounded-lg border border-border bg-background/95 p-2 shadow-lg backdrop-blur">
       <span className="px-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
