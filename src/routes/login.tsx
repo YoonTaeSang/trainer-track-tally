@@ -46,7 +46,7 @@ function LoginPage() {
   const [signupName, setSignupName] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupBirth, setSignupBirth] = useState("");
-  const [signupGender, setSignupGender] = useState<"male" | "female" | "other" | "">("");
+  const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
   const [signupAddress, setSignupAddress] = useState("");
   
 
