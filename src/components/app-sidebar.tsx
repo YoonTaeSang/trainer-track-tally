@@ -118,7 +118,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     await signOut();
     toast.success("로그아웃되었습니다");
-    navigate({ to: "/login" });
+    window.location.href = "/login";
   };
 
   return (
