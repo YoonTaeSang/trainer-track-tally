@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Trainer = {
   id: string;
+  userId?: string | null;
   name: string;
   phone: string;
   memo?: string;
@@ -15,6 +16,7 @@ export type MemberStatus = "pending" | "active" | "inactive" | "rejected";
 
 export type Member = {
   id: string;
+  userId?: string | null;
   name: string;
   phone: string;
   joinedAt: string;
