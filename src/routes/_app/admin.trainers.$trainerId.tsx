@@ -14,6 +14,14 @@ import {
 } from "@/components/ui/table";
 import { useTrainers, useMembers, useSchedules } from "@/lib/store";
 import { useRoleGuard } from "@/hooks/use-role-guard";
+import { GoalsSection } from "@/components/goals-section";
+import { Target } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/_app/admin/trainers/$trainerId")({
   component: TrainerDetailPage,
@@ -220,6 +228,37 @@ function TrainerDetailPage() {
               </tbody>
             </table>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-4 w-4" /> 담당 회원 목표 / 진행률
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {myMembers.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              담당 회원이 없습니다.
+            </p>
+          ) : (
+            <Accordion type="multiple" className="w-full">
+              {myMembers.map((m) => (
+                <AccordionItem key={m.id} value={m.id}>
+                  <AccordionTrigger className="text-sm">
+                    {m.name}{" "}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {m.phone}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <GoalsSection userId={m.id} readOnly canComment />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
         </CardContent>
       </Card>
     </div>
