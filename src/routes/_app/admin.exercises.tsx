@@ -60,6 +60,8 @@ const empty = {
 };
 
 function AdminExercisesPage() {
+  const { role } = useRole();
+  const isAdmin = role === "admin";
   const [items, setItems] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
