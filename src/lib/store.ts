@@ -313,7 +313,7 @@ export function usePublicTrainers(): readonly [Trainer[]] {
     const load = async () => {
       const { data: rows, error } = await (supabase as any)
         .from("trainers_public")
-        .select("id,name,created_at");
+        .select("id,user_id,name,created_at");
       if (cancelled) return;
       if (error) {
         console.error("[store:trainers_public] error", error);
@@ -322,6 +322,7 @@ export function usePublicTrainers(): readonly [Trainer[]] {
       setData(
         (rows ?? []).map((r: any) => ({
           id: r.id,
+          userId: r.user_id ?? null,
           name: r.name ?? "",
           phone: "",
           memo: "",
