@@ -181,7 +181,12 @@ function MemberDetailPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{member.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {member.name}
+              {member.status === "inactive" && (
+                <Badge variant="outline" className="ml-2 align-middle text-[10px]">비활성</Badge>
+              )}
+            </h1>
             <p className="flex items-center gap-1 text-sm text-muted-foreground">
               <Phone className="h-3 w-3" /> {member.phone || "—"}
             </p>
@@ -196,8 +201,40 @@ function MemberDetailPage() {
               <Plus className="mr-1 h-4 w-4" /> PT 노트 추가
             </Button>
           )}
+          {isAdmin && member.status !== "inactive" && (
+            <Button size="sm" variant="outline" onClick={() => setDeactivateOpen(true)}>
+              <UserX className="mr-1 h-4 w-4" /> 비활성화
+            </Button>
+          )}
+          {isAdmin && member.status === "inactive" && (
+            <Button size="sm" variant="outline" onClick={() => toggleStatus("active")}>
+              <RotateCcw className="mr-1 h-4 w-4" /> 활성화
+            </Button>
+          )}
         </div>
       </div>
+
+      <AlertDialog open={deactivateOpen} onOpenChange={setDeactivateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원 비활성화</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말 비활성화하시겠습니까? 회원 데이터는 보존됩니다.
+              <br />
+              <span className="font-medium text-foreground">{member.name}</span> 회원
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => toggleStatus("inactive")}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              비활성화
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardHeader>
