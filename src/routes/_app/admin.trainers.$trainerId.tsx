@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ArrowLeft, Phone, Users } from "lucide-react";
+import { ArrowLeft, Phone, Users, AlertTriangle, Loader2 } from "lucide-react";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { useTableStatus, refetchAllTables } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
