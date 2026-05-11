@@ -38,6 +38,14 @@ function AttendancePage() {
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isTrainer = role === "trainer";
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const requestSignature = (id: string) => {
+    setSchedules((prev) =>
+      prev.map((x) => (x.id === id ? { ...x, signatureRequested: true } : x))
+    );
+    toast.success("회원에게 서명 요청을 보냈습니다.");
+  };
 
   const items = useMemo(() => {
     const myMemberIds = new Set(
