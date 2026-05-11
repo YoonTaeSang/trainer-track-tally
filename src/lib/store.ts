@@ -19,6 +19,7 @@ export type Member = {
   userId?: string | null;
   name: string;
   phone: string;
+  email?: string | null;
   joinedAt: string;
   totalSessions: number;
   usedSessions: number;
