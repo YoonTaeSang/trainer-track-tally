@@ -175,7 +175,9 @@ type CacheEntry<L> = {
   data: L[];
   loaded: boolean;
   loading: boolean;
+  error: Error | null;
   listeners: Set<(d: L[]) => void>;
+  statusListeners: Set<() => void>;
   channel?: ReturnType<typeof supabase.channel>;
 };
 const caches = new Map<string, CacheEntry<any>>();
@@ -183,7 +185,7 @@ const caches = new Map<string, CacheEntry<any>>();
 function getCache<L>(table: string): CacheEntry<L> {
   let c = caches.get(table) as CacheEntry<L> | undefined;
   if (!c) {
-    c = { data: [], loaded: false, loading: false, listeners: new Set() };
+    c = { data: [], loaded: false, loading: false, error: null, listeners: new Set(), statusListeners: new Set() };
     caches.set(table, c);
   }
   return c;
@@ -193,19 +195,33 @@ function notify<L>(c: CacheEntry<L>) {
   c.listeners.forEach((fn) => fn(c.data));
 }
 
+function notifyStatus<L>(c: CacheEntry<L>) {
+  c.statusListeners.forEach((fn) => fn());
+}
+
 async function refetch<L>(table: string, mapper: Mapper<L>) {
   const c = getCache<L>(table);
   if (c.loading) return;
   c.loading = true;
-  const { data, error } = await (supabase as any).from(table).select("*");
-  c.loading = false;
-  if (error) {
-    console.error(`[store:${table}] refetch error`, error);
-    return;
+  c.error = null;
+  notifyStatus(c);
+  try {
+    const { data, error } = await (supabase as any).from(table).select("*");
+    if (error) {
+      console.error(`[store:${table}] refetch error`, error);
+      c.error = new Error(error.message ?? `Failed to load ${table}`);
+      return;
+    }
+    c.data = (data ?? []).map(mapper.fromRow);
+    c.loaded = true;
+    notify(c);
+  } catch (e: any) {
+    console.error(`[store:${table}] refetch threw`, e);
+    c.error = e instanceof Error ? e : new Error(String(e));
+  } finally {
+    c.loading = false;
+    notifyStatus(c);
   }
-  c.data = (data ?? []).map(mapper.fromRow);
-  c.loaded = true;
-  notify(c);
 }
 
 function ensureSubscription<L>(table: string, mapper: Mapper<L>) {
@@ -299,6 +315,20 @@ function useSupabaseTable<L extends { id: string }>(
 
 export function useTrainers() {
   return useSupabaseTable<Trainer>("trainers", mapTrainer);
+}
+
+/** Subscribe to load/error status of a store-managed table. */
+export function useTableStatus(table: "trainers" | "members" | "schedules" | "workout_logs") {
+  const c = getCache<any>(table);
+  const [, force] = useState(0);
+  useEffect(() => {
+    const fn = () => force((n) => n + 1);
+    c.statusListeners.add(fn);
+    return () => {
+      c.statusListeners.delete(fn);
+    };
+  }, [table]);
+  return { loading: c.loading, loaded: c.loaded, error: c.error };
 }
 
 /**
