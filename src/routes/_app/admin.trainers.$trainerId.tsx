@@ -24,7 +24,17 @@ import {
 } from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/_app/admin/trainers/$trainerId")({
-  component: TrainerDetailPage,
+  component: TrainerDetailPageWrapper,
+  head: () => ({ meta: [{ title: "트레이너 상세 | PT Studio" }] }),
+});
+
+function TrainerDetailPageWrapper() {
+  return (
+    <ErrorBoundary>
+      <TrainerDetailPage />
+    </ErrorBoundary>
+  );
+}
   head: () => ({ meta: [{ title: "트레이너 상세 | PT Studio" }] }),
 });
 
