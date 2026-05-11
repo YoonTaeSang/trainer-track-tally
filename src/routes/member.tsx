@@ -81,7 +81,7 @@ function MemberLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
-          <Outlet context={{ profileName }} />
+          <Outlet />
         </main>
 
         <nav className="sticky bottom-0 z-10 border-t bg-background/95 backdrop-blur">
