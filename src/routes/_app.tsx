@@ -22,6 +22,7 @@ function AppLayout() {
   }, []);
 
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!loading && !session) {
       navigate({ to: "/login" });
     }
@@ -29,6 +30,7 @@ function AppLayout() {
 
   // Members shouldn't access admin pages
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!roleLoading && role === "member") {
       navigate({ to: "/member" });
     }
