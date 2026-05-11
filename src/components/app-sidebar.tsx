@@ -13,9 +13,11 @@ import {
   Megaphone,
   CalendarClock,
   MessageCircle,
+  UserCheck,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRole } from "@/hooks/use-role";
+import { useMembers } from "@/lib/store";
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +41,7 @@ const allItems = [
   { key: "dash", title: "대시보드", url: "/admin", icon: LayoutDashboard, roles: ["admin", "trainer"] },
   { key: "members", title: "회원 관리", url: "/members", icon: Users, roles: ["admin", "trainer"] },
   { key: "trainers", title: "트레이너 관리", url: "/admin/trainers", icon: UserCog, roles: ["admin"] },
+  { key: "approvals", title: "가입 승인", url: "/admin/approvals", icon: UserCheck, roles: ["admin"] },
   { key: "calendar", title: "일정 캘린더", url: "/calendar", icon: Calendar, roles: ["admin", "trainer"] },
   { key: "attendance", title: "출석 체크", url: "/attendance", icon: ClipboardCheck, roles: ["admin", "trainer"] },
   { key: "exercises", title: "운동 라이브러리", url: "/admin/exercises", icon: Activity, roles: ["admin", "trainer"] },
@@ -59,6 +62,11 @@ export function AppSidebar() {
 
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [allMembers] = useMembers();
+  const pendingMemberCount = useMemo(
+    () => allMembers.filter((m) => m.status === "pending").length,
+    [allMembers]
+  );
 
   // pending schedule requests badge
   useEffect(() => {
@@ -138,6 +146,8 @@ export function AppSidebar() {
                     ? pendingCount
                     : item.key === "messages" && unreadMsgCount > 0
                     ? unreadMsgCount
+                    : item.key === "approvals" && pendingMemberCount > 0
+                    ? pendingMemberCount
                     : 0;
                 return (
                   <SidebarMenuItem key={item.title}>

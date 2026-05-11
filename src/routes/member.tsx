@@ -8,6 +8,7 @@ import { Dumbbell, Home, Calendar, Activity, ClipboardList, User, MessageCircle 
 import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRouteRefresh } from "@/hooks/use-route-refresh";
 
 export const Route = createFileRoute("/member")({
   component: MemberLayout,
@@ -29,10 +30,36 @@ function MemberLayout() {
   const { role, loading: roleLoading } = useRole();
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
   const [unreadMsg, setUnreadMsg] = useState(0);
+  const [memberStatus, setMemberStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchStatus = async () => {
+      const { data } = await supabase
+        .from("members")
+        .select("status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setMemberStatus(data?.status ?? null);
+    };
+    fetchStatus();
+    const ch = supabase
+      .channel(`member_status:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "members", filter: `user_id=eq.${user.id}` },
+        fetchStatus
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user]);
 
   useEffect(() => {
     seedDemoData();
   }, []);
+  useRouteRefresh();
 
   useEffect(() => {
     if (!user) return;

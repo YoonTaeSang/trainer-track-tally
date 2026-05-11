@@ -218,6 +218,7 @@ export type Database = {
           memo: string
           name: string
           phone: string
+          status: string
           total_sessions: number
           trainer_id: string | null
           used_sessions: number
@@ -230,6 +231,7 @@ export type Database = {
           memo?: string
           name?: string
           phone?: string
+          status?: string
           total_sessions?: number
           trainer_id?: string | null
           used_sessions?: number
@@ -242,6 +244,7 @@ export type Database = {
           memo?: string
           name?: string
           phone?: string
+          status?: string
           total_sessions?: number
           trainer_id?: string | null
           used_sessions?: number
@@ -287,27 +290,33 @@ export type Database = {
       notifications: {
         Row: {
           body: string
+          category: string
           created_at: string
           id: string
           read: boolean
+          sender_id: string | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
           body?: string
+          category?: string
           created_at?: string
           id?: string
           read?: boolean
+          sender_id?: string | null
           title: string
           type: string
           user_id: string
         }
         Update: {
           body?: string
+          category?: string
           created_at?: string
           id?: string
           read?: boolean
+          sender_id?: string | null
           title?: string
           type?: string
           user_id?: string

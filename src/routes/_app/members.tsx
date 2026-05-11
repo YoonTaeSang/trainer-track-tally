@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, CalendarPlus, BatteryCharging } from "lucide-react";
+import { Plus, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +58,7 @@ const empty: Omit<Member, "id"> = {
   totalSessions: 0,
   usedSessions: 0,
   memo: "",
+  status: "active",
 };
 
 function MembersPage() {
@@ -66,6 +78,8 @@ function MembersPage() {
   const [schedTime, setSchedTime] = useState("10:00");
   const [chargeFor, setChargeFor] = useState<Member | null>(null);
   const [chargeAmount, setChargeAmount] = useState(10);
+  const [deactivateFor, setDeactivateFor] = useState<Member | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const assignTrainer = (memberId: string, trainerId: string) => {
     const tid = trainerId === "__none__" ? null : trainerId;
@@ -141,13 +155,25 @@ function MembersPage() {
     setOpen(false);
   };
 
-  const remove = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    toast.success("회원이 삭제되었습니다.");
+  const deactivate = (id: string) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status: "inactive" } : m))
+    );
+    toast.success("회원이 비활성화되었습니다.");
+    setDeactivateFor(null);
+  };
+
+  const reactivate = (id: string) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status: "active" } : m))
+    );
+    toast.success("회원이 다시 활성화되었습니다.");
   };
 
   const filtered = members
     .filter((m) => (isTrainer && currentTrainerId ? m.trainerId === currentTrainerId : true))
+    .filter((m) => (showInactive ? true : m.status !== "inactive"))
+    .filter((m) => m.status !== "pending" && m.status !== "rejected")
     .filter((m) => m.name.includes(search) || m.phone.includes(search));
 
   return (
@@ -207,12 +233,20 @@ function MembersPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <Input
-            placeholder="이름 또는 연락처로 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="mb-4 max-w-sm"
-          />
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <Input
+              placeholder="이름 또는 연락처로 검색"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-sm"
+            />
+            {isAdmin && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Switch checked={showInactive} onCheckedChange={setShowInactive} />
+                비활성화 회원 보기
+              </label>
+            )}
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -235,8 +269,9 @@ function MembersPage() {
               ) : (
                 filtered.map((m) => {
                   const remain = m.totalSessions - m.usedSessions;
+                  const isInactive = m.status === "inactive";
                   return (
-                    <TableRow key={m.id}>
+                    <TableRow key={m.id} className={isInactive ? "opacity-50" : undefined}>
                       <TableCell className="font-medium">
                         <Link
                           to="/members/$memberId"
@@ -245,6 +280,11 @@ function MembersPage() {
                         >
                           {m.name}
                         </Link>
+                        {isInactive && (
+                          <Badge variant="outline" className="ml-2 text-[10px]">
+                            비활성
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>{m.phone}</TableCell>
                       <TableCell>{m.joinedAt}</TableCell>
@@ -286,9 +326,24 @@ function MembersPage() {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         )}
-                        {isAdmin && (
-                          <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
-                            <Trash2 className="h-4 w-4" />
+                        {isAdmin && !isInactive && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setDeactivateFor(m)}
+                            title="비활성화"
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {isAdmin && isInactive && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => reactivate(m.id)}
+                            title="활성화"
+                          >
+                            <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
                       </TableCell>
@@ -356,6 +411,28 @@ function MembersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deactivateFor} onOpenChange={(v) => !v && setDeactivateFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원 비활성화</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말 비활성화하시겠습니까? 회원 데이터는 보존됩니다.
+              <br />
+              <span className="font-medium text-foreground">{deactivateFor?.name}</span> 회원
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deactivateFor && deactivate(deactivateFor.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              비활성화
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

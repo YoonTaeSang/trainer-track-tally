@@ -7,6 +7,7 @@ import { seedDemoData } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { DEV_BYPASS } from "@/lib/dev-mode";
+import { useRouteRefresh } from "@/hooks/use-route-refresh";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -20,6 +21,7 @@ function AppLayout() {
   useEffect(() => {
     seedDemoData();
   }, []);
+  useRouteRefresh();
 
   useEffect(() => {
     if (DEV_BYPASS) return;
