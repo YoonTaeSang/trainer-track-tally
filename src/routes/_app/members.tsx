@@ -157,12 +157,13 @@ function MembersPage() {
           <h1 className="text-2xl font-bold tracking-tight">회원 관리</h1>
           <p className="text-sm text-muted-foreground">회원 정보를 등록하고 관리합니다.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew}>
-              <Plus className="mr-2 h-4 w-4" /> 회원 등록
-            </Button>
-          </DialogTrigger>
+        {isAdmin && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew}>
+                <Plus className="mr-2 h-4 w-4" /> 회원 등록
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editing ? "회원 수정" : "회원 등록"}</DialogTitle>
