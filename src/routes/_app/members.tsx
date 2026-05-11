@@ -24,7 +24,16 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useMembers, useSchedules, uid, type Member } from "@/lib/store";
+import { useMembers, useSchedules, useTrainers, uid, type Member } from "@/lib/store";
+import { useRole } from "@/hooks/use-role";
+import { useCurrentTrainer } from "@/hooks/use-current-trainer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/members")({
   component: MembersPage,
@@ -43,6 +52,11 @@ const empty: Omit<Member, "id"> = {
 function MembersPage() {
   const [members, setMembers] = useMembers();
   const [, setSchedules] = useSchedules();
+  const [trainers] = useTrainers();
+  const { role } = useRole();
+  const { trainerId: currentTrainerId } = useCurrentTrainer();
+  const isAdmin = role === "admin";
+  const isTrainer = role === "trainer";
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [form, setForm] = useState<Omit<Member, "id">>(empty);
@@ -52,6 +66,12 @@ function MembersPage() {
   const [schedTime, setSchedTime] = useState("10:00");
   const [chargeFor, setChargeFor] = useState<Member | null>(null);
   const [chargeAmount, setChargeAmount] = useState(10);
+
+  const assignTrainer = (memberId: string, trainerId: string) => {
+    const tid = trainerId === "__none__" ? null : trainerId;
+    setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, trainerId: tid } : m)));
+    toast.success("담당 트레이너가 저장되었습니다.");
+  };
 
   const openCharge = (m: Member) => {
     setChargeFor(m);
@@ -126,9 +146,9 @@ function MembersPage() {
     toast.success("회원이 삭제되었습니다.");
   };
 
-  const filtered = members.filter(
-    (m) => m.name.includes(search) || m.phone.includes(search)
-  );
+  const filtered = members
+    .filter((m) => (isTrainer && currentTrainerId ? m.trainerId === currentTrainerId : true))
+    .filter((m) => m.name.includes(search) || m.phone.includes(search));
 
   return (
     <div className="space-y-6">
@@ -137,12 +157,13 @@ function MembersPage() {
           <h1 className="text-2xl font-bold tracking-tight">회원 관리</h1>
           <p className="text-sm text-muted-foreground">회원 정보를 등록하고 관리합니다.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew}>
-              <Plus className="mr-2 h-4 w-4" /> 회원 등록
-            </Button>
-          </DialogTrigger>
+        {isAdmin && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew}>
+                <Plus className="mr-2 h-4 w-4" /> 회원 등록
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editing ? "회원 수정" : "회원 등록"}</DialogTitle>
@@ -181,6 +202,7 @@ function MembersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card>
@@ -199,13 +221,14 @@ function MembersPage() {
                 <TableHead>등록일</TableHead>
                 <TableHead>세션</TableHead>
                 <TableHead>잔여</TableHead>
+                {isAdmin && <TableHead>담당 트레이너</TableHead>}
                 <TableHead className="text-right">작업</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-sm text-muted-foreground">
                     등록된 회원이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -223,6 +246,24 @@ function MembersPage() {
                           {remain}회
                         </Badge>
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <Select
+                            value={m.trainerId ?? "__none__"}
+                            onValueChange={(v) => assignTrainer(m.id, v)}
+                          >
+                            <SelectTrigger className="h-8 w-[160px]">
+                              <SelectValue placeholder="미배정" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">미배정</SelectItem>
+                              {trainers.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      )}
                       <TableCell className="text-right">
                         <Button size="icon" variant="ghost" onClick={() => openCharge(m)} title="세션 충전">
                           <BatteryCharging className="h-4 w-4" />
@@ -233,9 +274,11 @@ function MembersPage() {
                         <Button size="icon" variant="ghost" onClick={() => openEdit(m)} title="수정">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {isAdmin && (
+                          <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

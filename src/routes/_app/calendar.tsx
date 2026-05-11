@@ -34,6 +34,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMembers, useSchedules, uid } from "@/lib/store";
+import { useRole } from "@/hooks/use-role";
+import { useCurrentTrainer } from "@/hooks/use-current-trainer";
 
 export const Route = createFileRoute("/_app/calendar")({
   component: CalendarPage,
@@ -42,7 +44,22 @@ export const Route = createFileRoute("/_app/calendar")({
 
 function CalendarPage() {
   const [members] = useMembers();
-  const [schedules, setSchedules] = useSchedules();
+  const [allSchedules, setSchedules] = useSchedules();
+  const { role } = useRole();
+  const { trainerId: currentTrainerId } = useCurrentTrainer();
+  const isTrainer = role === "trainer";
+  const visibleMemberIds = useMemo(() => {
+    if (!isTrainer || !currentTrainerId) return new Set(members.map((m) => m.id));
+    return new Set(members.filter((m) => m.trainerId === currentTrainerId).map((m) => m.id));
+  }, [members, isTrainer, currentTrainerId]);
+  const schedules = useMemo(
+    () => (isTrainer ? allSchedules.filter((s) => visibleMemberIds.has(s.memberId)) : allSchedules),
+    [allSchedules, isTrainer, visibleMemberIds]
+  );
+  const visibleMembers = useMemo(
+    () => (isTrainer ? members.filter((m) => visibleMemberIds.has(m.id)) : members),
+    [members, isTrainer, visibleMemberIds]
+  );
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date | null>(new Date());
   const [open, setOpen] = useState(false);
@@ -206,7 +223,7 @@ function CalendarPage() {
                   <SelectValue placeholder="회원 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {members.map((m) => (
+                  {visibleMembers.map((m) => (
                     <SelectItem key={m.id} value={m.id}>{m.name} ({m.phone})</SelectItem>
                   ))}
                 </SelectContent>

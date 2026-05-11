@@ -18,6 +18,7 @@ function MemberHome() {
   const [schedules] = useSchedules();
   const [trainers] = useTrainers();
   const [profileName, setProfileName] = useState<string>("");
+  const [latestNotice, setLatestNotice] = useState<{ title: string; body: string; created_at: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +28,16 @@ function MemberHome() {
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => setProfileName(data?.name ?? ""));
+
+    supabase
+      .from("notifications")
+      .select("title, body, created_at")
+      .eq("user_id", user.id)
+      .eq("type", "trainer_message")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setLatestNotice(data ?? null));
   }, [user]);
 
   const myMember = useMemo(() => {
@@ -166,7 +177,7 @@ function MemberHome() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <Megaphone className="h-4 w-4" /> 트레이너 메시지
+            <Megaphone className="h-4 w-4" /> {latestNotice ? "공지사항" : "트레이너 메시지"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -175,10 +186,19 @@ function MemberHome() {
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium">{myTrainer?.name ?? "PT Studio"}</p>
-              <p className="text-sm text-muted-foreground">
-                이번 주도 꾸준한 운동 부탁드려요. 다음 세션 전까지 스트레칭 잊지 마세요!
+              <p className="text-sm font-medium">
+                {latestNotice ? latestNotice.title : myTrainer?.name ?? "PT Studio"}
               </p>
+              <p className="text-sm text-muted-foreground">
+                {latestNotice
+                  ? latestNotice.body
+                  : "이번 주도 꾸준한 운동 부탁드려요. 다음 세션 전까지 스트레칭 잊지 마세요!"}
+              </p>
+              {latestNotice && (
+                <p className="text-[11px] text-muted-foreground">
+                  {new Date(latestNotice.created_at).toLocaleString("ko-KR")}
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
