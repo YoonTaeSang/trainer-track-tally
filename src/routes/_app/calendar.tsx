@@ -223,7 +223,7 @@ function CalendarPage() {
                   <SelectValue placeholder="회원 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {members.map((m) => (
+                  {visibleMembers.map((m) => (
                     <SelectItem key={m.id} value={m.id}>{m.name} ({m.phone})</SelectItem>
                   ))}
                 </SelectContent>
