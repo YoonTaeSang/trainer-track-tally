@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { seedDemoData } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
+import { DEV_BYPASS } from "@/lib/dev-mode";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
