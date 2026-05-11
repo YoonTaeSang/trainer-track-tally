@@ -229,6 +229,7 @@ function AdminExercisesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card>
