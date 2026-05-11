@@ -5,7 +5,8 @@ import { useRole } from "@/hooks/use-role";
 import { seedDemoData } from "@/lib/store";
 import { DEV_BYPASS } from "@/lib/dev-mode";
 import { Button } from "@/components/ui/button";
-import { Bell, Dumbbell, Home, Calendar, Activity, ClipboardList, User } from "lucide-react";
+import { Dumbbell, Home, Calendar, Activity, ClipboardList, User } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 
 export const Route = createFileRoute("/member")({
   component: MemberLayout,
