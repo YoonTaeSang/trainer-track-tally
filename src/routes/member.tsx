@@ -8,6 +8,7 @@ import { Dumbbell, Home, Calendar, Activity, ClipboardList, User, MessageCircle 
 import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRouteRefresh } from "@/hooks/use-route-refresh";
 
 export const Route = createFileRoute("/member")({
   component: MemberLayout,
@@ -33,6 +34,7 @@ function MemberLayout() {
   useEffect(() => {
     seedDemoData();
   }, []);
+  useRouteRefresh();
 
   useEffect(() => {
     if (!user) return;
