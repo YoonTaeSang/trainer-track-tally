@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
 import { DevModeSwitcher } from "@/components/dev-mode-switcher";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +123,7 @@ function RootComponent() {
       <AuthProvider>
         <Outlet />
         <DevModeSwitcher />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );
