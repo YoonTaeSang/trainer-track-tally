@@ -19,6 +19,10 @@ export const Route = createFileRoute("/login")({
 const emailSchema = z.string().trim().email("올바른 이메일을 입력해주세요").max(255);
 const passwordSchema = z.string().min(6, "비밀번호는 6자 이상이어야 합니다").max(72);
 const nameSchema = z.string().trim().min(1, "이름을 입력해주세요").max(50);
+const phoneSchema = z.string().trim().min(1, "전화번호를 입력해주세요").max(20);
+const birthSchema = z.string().trim().min(1, "생년월일을 입력해주세요");
+const genderSchema = z.enum(["male", "female", "other"], { errorMap: () => ({ message: "성별을 선택해주세요" }) });
+const addressSchema = z.string().trim().max(200).optional();
 
 async function redirectByRole(userId: string, navigate: ReturnType<typeof useNavigate>) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
