@@ -42,18 +42,17 @@ function MemberMessages() {
     [myMember, trainers]
   );
 
-  // Load partner ids: trainer (by name) + all admins
+  // Load partner ids: trainer (by user_id) + all admins
   useEffect(() => {
     if (!user) return;
     const run = async () => {
       const list: Partner[] = [];
-      if (myTrainer?.name) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, name")
-          .eq("name", myTrainer.name)
-          .maybeSingle();
-        if (data) list.push({ id: data.id, name: data.name, role: "trainer" });
+      if (myTrainer?.userId) {
+        list.push({
+          id: myTrainer.userId,
+          name: myTrainer.name || "트레이너",
+          role: "trainer",
+        });
       }
       // admins
       const { data: adminRoles } = await supabase
