@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, CalendarPlus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useMembers, uid, type Member } from "@/lib/store";
+import { useMembers, useSchedules, uid, type Member } from "@/lib/store";
 
 export const Route = createFileRoute("/_app/members")({
   component: MembersPage,
@@ -42,10 +42,34 @@ const empty: Omit<Member, "id"> = {
 
 function MembersPage() {
   const [members, setMembers] = useMembers();
+  const [, setSchedules] = useSchedules();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [form, setForm] = useState<Omit<Member, "id">>(empty);
   const [search, setSearch] = useState("");
+  const [scheduleFor, setScheduleFor] = useState<Member | null>(null);
+  const [schedDate, setSchedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [schedTime, setSchedTime] = useState("10:00");
+
+  const openSchedule = (m: Member) => {
+    setScheduleFor(m);
+    setSchedDate(new Date().toISOString().slice(0, 10));
+    setSchedTime("10:00");
+  };
+
+  const addSchedule = () => {
+    if (!scheduleFor) return;
+    if (!schedDate || !schedTime) {
+      toast.error("날짜와 시간을 입력해주세요.");
+      return;
+    }
+    setSchedules((prev) => [
+      ...prev,
+      { id: uid(), memberId: scheduleFor.id, date: schedDate, time: schedTime, attended: null },
+    ]);
+    toast.success(`${scheduleFor.name} 회원의 일정이 추가되었습니다.`);
+    setScheduleFor(null);
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -178,10 +202,13 @@ function MembersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(m)}>
+                        <Button size="icon" variant="ghost" onClick={() => openSchedule(m)} title="일정 추가">
+                          <CalendarPlus className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(m)} title="수정">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => remove(m.id)}>
+                        <Button size="icon" variant="ghost" onClick={() => remove(m.id)} title="삭제">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -193,6 +220,28 @@ function MembersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!scheduleFor} onOpenChange={(v) => !v && setScheduleFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>일정 추가 — {scheduleFor?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-2">
+              <Label>날짜</Label>
+              <Input type="date" value={schedDate} onChange={(e) => setSchedDate(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label>시간</Label>
+              <Input type="time" value={schedTime} onChange={(e) => setSchedTime(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleFor(null)}>취소</Button>
+            <Button onClick={addSchedule}>저장</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
