@@ -321,6 +321,36 @@ function MemberProfile() {
         로그아웃
       </Button>
 
+      <Button
+        variant="ghost"
+        className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+        onClick={() => setWithdrawOpen(true)}
+      >
+        <UserX className="mr-2 h-4 w-4" />
+        회원 탈퇴
+      </Button>
+
+      <AlertDialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+        <AlertDialogContent className="max-w-[360px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말 탈퇴하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              계정이 비활성화되며 다시 로그인할 수 없습니다.
+              회원 데이터는 보존되며 관리자 문의로 복구할 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={withdraw}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              탈퇴하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={pwOpen} onOpenChange={setPwOpen}>
         <DialogContent className="max-w-[360px]">
           <DialogHeader>
