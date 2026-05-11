@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw } from "lucide-react";
+import { Plus, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -411,6 +411,28 @@ function MembersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deactivateFor} onOpenChange={(v) => !v && setDeactivateFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원 비활성화</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말 비활성화하시겠습니까? 회원 데이터는 보존됩니다.
+              <br />
+              <span className="font-medium text-foreground">{deactivateFor?.name}</span> 회원
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deactivateFor && deactivate(deactivateFor.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              비활성화
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
