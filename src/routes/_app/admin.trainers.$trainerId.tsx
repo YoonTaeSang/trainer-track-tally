@@ -35,8 +35,6 @@ function TrainerDetailPageWrapper() {
     </ErrorBoundary>
   );
 }
-  head: () => ({ meta: [{ title: "트레이너 상세 | PT Studio" }] }),
-});
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06~22
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
