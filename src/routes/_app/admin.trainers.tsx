@@ -116,6 +116,43 @@ function TrainersPage() {
     (t) => t.name.includes(search) || t.phone.includes(search)
   );
 
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 권한 확인 중...
+      </div>
+    );
+  }
+  if (!allowed) return null;
+
+  const loadError = trainersStatus.error ?? membersStatus.error ?? schedulesStatus.error;
+  if (loadError) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+          <div className="text-sm font-medium">데이터를 불러오지 못했습니다.</div>
+          <pre className="max-w-full overflow-auto rounded bg-muted p-3 text-left text-xs text-muted-foreground">
+            {loadError.message}
+          </pre>
+          <Button size="sm" onClick={() => refetchAllTables()}>다시 시도</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const initialLoading =
+    (!trainersStatus.loaded && trainersStatus.loading) ||
+    (!membersStatus.loaded && membersStatus.loading) ||
+    (!schedulesStatus.loaded && schedulesStatus.loading);
+  if (initialLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 트레이너 정보를 불러오는 중...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
