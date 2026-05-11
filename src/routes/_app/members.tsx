@@ -267,6 +267,40 @@ function MembersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!chargeFor} onOpenChange={(v) => !v && setChargeFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>세션 충전 — {chargeFor?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              현재 잔여: {chargeFor ? chargeFor.totalSessions - chargeFor.usedSessions : 0}회
+              {" / "}총 {chargeFor?.totalSessions ?? 0}회
+            </p>
+            <div className="grid gap-2">
+              <Label>충전 횟수</Label>
+              <Input
+                type="number"
+                min={1}
+                value={chargeAmount}
+                onChange={(e) => setChargeAmount(Number(e.target.value))}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[5, 10, 20, 30].map((n) => (
+                <Button key={n} type="button" size="sm" variant="outline" onClick={() => setChargeAmount(n)}>
+                  +{n}회
+                </Button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChargeFor(null)}>취소</Button>
+            <Button onClick={applyCharge}>충전</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
