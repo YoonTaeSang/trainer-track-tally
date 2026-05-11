@@ -28,6 +28,7 @@ function MemberPage() {
 
   // Auth guard: redirect non-logged-in to /login
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!authLoading && !user) {
       navigate({ to: "/login" });
     }
@@ -35,6 +36,7 @@ function MemberPage() {
 
   // Role guard: send admin/trainer to /admin
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (!roleLoading && role && (role === "admin" || role === "trainer")) {
       navigate({ to: "/admin" });
     }
