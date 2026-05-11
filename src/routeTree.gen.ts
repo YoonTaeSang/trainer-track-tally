@@ -33,6 +33,7 @@ import { Route as AppAdminRequestsRouteImport } from './routes/_app/admin.reques
 import { Route as AppAdminNoticeRouteImport } from './routes/_app/admin.notice'
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
 import { Route as AppAdminExercisesRouteImport } from './routes/_app/admin.exercises'
+import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin.approvals'
 import { Route as AppAdminTrainersTrainerIdRouteImport } from './routes/_app/admin.trainers.$trainerId'
 
 const MemberRoute = MemberRouteImport.update({
@@ -155,6 +156,11 @@ const AppAdminExercisesRoute = AppAdminExercisesRouteImport.update({
   path: '/admin/exercises',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
+  id: '/admin/approvals',
+  path: '/admin/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminTrainersTrainerIdRoute =
   AppAdminTrainersTrainerIdRouteImport.update({
     id: '/$trainerId',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
   '/member/': typeof MemberIndexRoute
+  '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/exercises': typeof AppAdminExercisesRoute
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notice': typeof AppAdminNoticeRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/member/records': typeof MemberRecordsRoute
   '/': typeof AppIndexRoute
   '/member': typeof MemberIndexRoute
+  '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/exercises': typeof AppAdminExercisesRoute
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notice': typeof AppAdminNoticeRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/member/records': typeof MemberRecordsRoute
   '/_app/': typeof AppIndexRoute
   '/member/': typeof MemberIndexRoute
+  '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/exercises': typeof AppAdminExercisesRoute
   '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/notice': typeof AppAdminNoticeRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/member/profile'
     | '/member/records'
     | '/member/'
+    | '/admin/approvals'
     | '/admin/exercises'
     | '/admin/messages'
     | '/admin/notice'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/member/records'
     | '/'
     | '/member'
+    | '/admin/approvals'
     | '/admin/exercises'
     | '/admin/messages'
     | '/admin/notice'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/member/records'
     | '/_app/'
     | '/member/'
+    | '/_app/admin/approvals'
     | '/_app/admin/exercises'
     | '/_app/admin/messages'
     | '/_app/admin/notice'
@@ -498,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminExercisesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/approvals': {
+      id: '/_app/admin/approvals'
+      path: '/admin/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AppAdminApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/trainers/$trainerId': {
       id: '/_app/admin/trainers/$trainerId'
       path: '/$trainerId'
@@ -536,6 +555,7 @@ interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
   AppMembersRoute: typeof AppMembersRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminExercisesRoute: typeof AppAdminExercisesRoute
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminNoticeRoute: typeof AppAdminNoticeRoute
@@ -551,6 +571,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalendarRoute: AppCalendarRoute,
   AppMembersRoute: AppMembersRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminExercisesRoute: AppAdminExercisesRoute,
   AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminNoticeRoute: AppAdminNoticeRoute,
