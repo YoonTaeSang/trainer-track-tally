@@ -14,7 +14,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as MemberIndexRouteImport } from './routes/member.index'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as MemberWorkoutRouteImport } from './routes/member.workout'
 import { Route as MemberRecordsRouteImport } from './routes/member.records'
 import { Route as MemberProfileRouteImport } from './routes/member.profile'
 import { Route as MemberHomeRouteImport } from './routes/member.home'
@@ -50,11 +49,6 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
-} as any)
-const MemberWorkoutRoute = MemberWorkoutRouteImport.update({
-  id: '/workout',
-  path: '/workout',
-  getParentRoute: () => MemberRoute,
 } as any)
 const MemberRecordsRoute = MemberRecordsRouteImport.update({
   id: '/records',
@@ -125,7 +119,6 @@ export interface FileRoutesByFullPath {
   '/member/home': typeof MemberHomeRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
-  '/member/workout': typeof MemberWorkoutRoute
   '/member/': typeof MemberIndexRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
@@ -141,7 +134,6 @@ export interface FileRoutesByTo {
   '/member/home': typeof MemberHomeRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
-  '/member/workout': typeof MemberWorkoutRoute
   '/': typeof AppIndexRoute
   '/member': typeof MemberIndexRoute
   '/admin/stats': typeof AppAdminStatsRoute
@@ -161,7 +153,6 @@ export interface FileRoutesById {
   '/member/home': typeof MemberHomeRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/records': typeof MemberRecordsRoute
-  '/member/workout': typeof MemberWorkoutRoute
   '/_app/': typeof AppIndexRoute
   '/member/': typeof MemberIndexRoute
   '/_app/admin/stats': typeof AppAdminStatsRoute
@@ -182,7 +173,6 @@ export interface FileRouteTypes {
     | '/member/home'
     | '/member/profile'
     | '/member/records'
-    | '/member/workout'
     | '/member/'
     | '/admin/stats'
     | '/admin/trainers'
@@ -198,7 +188,6 @@ export interface FileRouteTypes {
     | '/member/home'
     | '/member/profile'
     | '/member/records'
-    | '/member/workout'
     | '/'
     | '/member'
     | '/admin/stats'
@@ -217,7 +206,6 @@ export interface FileRouteTypes {
     | '/member/home'
     | '/member/profile'
     | '/member/records'
-    | '/member/workout'
     | '/_app/'
     | '/member/'
     | '/_app/admin/stats'
@@ -267,13 +255,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
-    }
-    '/member/workout': {
-      id: '/member/workout'
-      path: '/workout'
-      fullPath: '/member/workout'
-      preLoaderRoute: typeof MemberWorkoutRouteImport
-      parentRoute: typeof MemberRoute
     }
     '/member/records': {
       id: '/member/records'
@@ -403,7 +384,6 @@ interface MemberRouteChildren {
   MemberHomeRoute: typeof MemberHomeRoute
   MemberProfileRoute: typeof MemberProfileRoute
   MemberRecordsRoute: typeof MemberRecordsRoute
-  MemberWorkoutRoute: typeof MemberWorkoutRoute
   MemberIndexRoute: typeof MemberIndexRoute
 }
 
@@ -412,7 +392,6 @@ const MemberRouteChildren: MemberRouteChildren = {
   MemberHomeRoute: MemberHomeRoute,
   MemberProfileRoute: MemberProfileRoute,
   MemberRecordsRoute: MemberRecordsRoute,
-  MemberWorkoutRoute: MemberWorkoutRoute,
   MemberIndexRoute: MemberIndexRoute,
 }
 
@@ -427,3 +406,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
