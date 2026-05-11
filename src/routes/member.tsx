@@ -79,7 +79,7 @@ function MemberPage() {
     navigate({ to: "/login" });
   };
 
-  if (authLoading || roleLoading || !user) {
+  if (!DEV_BYPASS && (authLoading || roleLoading || !user)) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         로딩 중...
