@@ -12,7 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MemberRouteImport } from './routes/member'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as MemberIndexRouteImport } from './routes/member.index'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as MemberWorkoutRouteImport } from './routes/member.workout'
+import { Route as MemberRecordsRouteImport } from './routes/member.records'
+import { Route as MemberProfileRouteImport } from './routes/member.profile'
+import { Route as MemberHomeRouteImport } from './routes/member.home'
+import { Route as MemberBookingRouteImport } from './routes/member.booking'
 import { Route as AppMembersRouteImport } from './routes/_app/members'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
@@ -35,10 +41,40 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MemberIndexRoute = MemberIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MemberRoute,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const MemberWorkoutRoute = MemberWorkoutRouteImport.update({
+  id: '/workout',
+  path: '/workout',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberRecordsRoute = MemberRecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberProfileRoute = MemberProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberHomeRoute = MemberHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberBookingRoute = MemberBookingRouteImport.update({
+  id: '/booking',
+  path: '/booking',
+  getParentRoute: () => MemberRoute,
 } as any)
 const AppMembersRoute = AppMembersRouteImport.update({
   id: '/members',
@@ -80,23 +116,34 @@ const AppAdminTrainersTrainerIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
-  '/member': typeof MemberRoute
+  '/member': typeof MemberRouteWithChildren
   '/admin': typeof AppAdminRouteWithChildren
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
+  '/member/booking': typeof MemberBookingRoute
+  '/member/home': typeof MemberHomeRoute
+  '/member/profile': typeof MemberProfileRoute
+  '/member/records': typeof MemberRecordsRoute
+  '/member/workout': typeof MemberWorkoutRoute
+  '/member/': typeof MemberIndexRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/member': typeof MemberRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/attendance': typeof AppAttendanceRoute
   '/calendar': typeof AppCalendarRoute
   '/members': typeof AppMembersRoute
+  '/member/booking': typeof MemberBookingRoute
+  '/member/home': typeof MemberHomeRoute
+  '/member/profile': typeof MemberProfileRoute
+  '/member/records': typeof MemberRecordsRoute
+  '/member/workout': typeof MemberWorkoutRoute
   '/': typeof AppIndexRoute
+  '/member': typeof MemberIndexRoute
   '/admin/stats': typeof AppAdminStatsRoute
   '/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
@@ -105,12 +152,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/member': typeof MemberRoute
+  '/member': typeof MemberRouteWithChildren
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/members': typeof AppMembersRoute
+  '/member/booking': typeof MemberBookingRoute
+  '/member/home': typeof MemberHomeRoute
+  '/member/profile': typeof MemberProfileRoute
+  '/member/records': typeof MemberRecordsRoute
+  '/member/workout': typeof MemberWorkoutRoute
   '/_app/': typeof AppIndexRoute
+  '/member/': typeof MemberIndexRoute
   '/_app/admin/stats': typeof AppAdminStatsRoute
   '/_app/admin/trainers': typeof AppAdminTrainersRouteWithChildren
   '/_app/admin/trainers/$trainerId': typeof AppAdminTrainersTrainerIdRoute
@@ -125,18 +178,29 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/calendar'
     | '/members'
+    | '/member/booking'
+    | '/member/home'
+    | '/member/profile'
+    | '/member/records'
+    | '/member/workout'
+    | '/member/'
     | '/admin/stats'
     | '/admin/trainers'
     | '/admin/trainers/$trainerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/member'
     | '/admin'
     | '/attendance'
     | '/calendar'
     | '/members'
+    | '/member/booking'
+    | '/member/home'
+    | '/member/profile'
+    | '/member/records'
+    | '/member/workout'
     | '/'
+    | '/member'
     | '/admin/stats'
     | '/admin/trainers'
     | '/admin/trainers/$trainerId'
@@ -149,7 +213,13 @@ export interface FileRouteTypes {
     | '/_app/attendance'
     | '/_app/calendar'
     | '/_app/members'
+    | '/member/booking'
+    | '/member/home'
+    | '/member/profile'
+    | '/member/records'
+    | '/member/workout'
     | '/_app/'
+    | '/member/'
     | '/_app/admin/stats'
     | '/_app/admin/trainers'
     | '/_app/admin/trainers/$trainerId'
@@ -158,7 +228,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
-  MemberRoute: typeof MemberRoute
+  MemberRoute: typeof MemberRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -184,12 +254,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/member/': {
+      id: '/member/'
+      path: '/'
+      fullPath: '/member/'
+      preLoaderRoute: typeof MemberIndexRouteImport
+      parentRoute: typeof MemberRoute
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/member/workout': {
+      id: '/member/workout'
+      path: '/workout'
+      fullPath: '/member/workout'
+      preLoaderRoute: typeof MemberWorkoutRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/records': {
+      id: '/member/records'
+      path: '/records'
+      fullPath: '/member/records'
+      preLoaderRoute: typeof MemberRecordsRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/profile': {
+      id: '/member/profile'
+      path: '/profile'
+      fullPath: '/member/profile'
+      preLoaderRoute: typeof MemberProfileRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/home': {
+      id: '/member/home'
+      path: '/home'
+      fullPath: '/member/home'
+      preLoaderRoute: typeof MemberHomeRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/booking': {
+      id: '/member/booking'
+      path: '/booking'
+      fullPath: '/member/booking'
+      preLoaderRoute: typeof MemberBookingRouteImport
+      parentRoute: typeof MemberRoute
     }
     '/_app/members': {
       id: '/_app/members'
@@ -286,10 +398,31 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface MemberRouteChildren {
+  MemberBookingRoute: typeof MemberBookingRoute
+  MemberHomeRoute: typeof MemberHomeRoute
+  MemberProfileRoute: typeof MemberProfileRoute
+  MemberRecordsRoute: typeof MemberRecordsRoute
+  MemberWorkoutRoute: typeof MemberWorkoutRoute
+  MemberIndexRoute: typeof MemberIndexRoute
+}
+
+const MemberRouteChildren: MemberRouteChildren = {
+  MemberBookingRoute: MemberBookingRoute,
+  MemberHomeRoute: MemberHomeRoute,
+  MemberProfileRoute: MemberProfileRoute,
+  MemberRecordsRoute: MemberRecordsRoute,
+  MemberWorkoutRoute: MemberWorkoutRoute,
+  MemberIndexRoute: MemberIndexRoute,
+}
+
+const MemberRouteWithChildren =
+  MemberRoute._addFileChildren(MemberRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
-  MemberRoute: MemberRoute,
+  MemberRoute: MemberRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
