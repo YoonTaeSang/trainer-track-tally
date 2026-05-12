@@ -32,6 +32,7 @@ import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.traine
 import { Route as AppAdminStatsRouteImport } from './routes/_app/admin.stats'
 import { Route as AppAdminRequestsRouteImport } from './routes/_app/admin.requests'
 import { Route as AppAdminNoticeRouteImport } from './routes/_app/admin.notice'
+import { Route as AppAdminMyScheduleRouteImport } from './routes/_app/admin.my-schedule'
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
 import { Route as AppAdminExercisesRouteImport } from './routes/_app/admin.exercises'
 import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin.approvals'
@@ -152,6 +153,11 @@ const AppAdminNoticeRoute = AppAdminNoticeRouteImport.update({
   path: '/admin/notice',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminMyScheduleRoute = AppAdminMyScheduleRouteImport.update({
+  id: '/admin/my-schedule',
+  path: '/admin/my-schedule',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
   id: '/admin/messages',
   path: '/admin/messages',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/exercises': typeof AppAdminExercisesRoute
   '/admin/messages': typeof AppAdminMessagesRoute
+  '/admin/my-schedule': typeof AppAdminMyScheduleRoute
   '/admin/notice': typeof AppAdminNoticeRoute
   '/admin/requests': typeof AppAdminRequestsRoute
   '/admin/stats': typeof AppAdminStatsRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/exercises': typeof AppAdminExercisesRoute
   '/admin/messages': typeof AppAdminMessagesRoute
+  '/admin/my-schedule': typeof AppAdminMyScheduleRoute
   '/admin/notice': typeof AppAdminNoticeRoute
   '/admin/requests': typeof AppAdminRequestsRoute
   '/admin/stats': typeof AppAdminStatsRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/exercises': typeof AppAdminExercisesRoute
   '/_app/admin/messages': typeof AppAdminMessagesRoute
+  '/_app/admin/my-schedule': typeof AppAdminMyScheduleRoute
   '/_app/admin/notice': typeof AppAdminNoticeRoute
   '/_app/admin/requests': typeof AppAdminRequestsRoute
   '/_app/admin/stats': typeof AppAdminStatsRoute
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/admin/approvals'
     | '/admin/exercises'
     | '/admin/messages'
+    | '/admin/my-schedule'
     | '/admin/notice'
     | '/admin/requests'
     | '/admin/stats'
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/admin/approvals'
     | '/admin/exercises'
     | '/admin/messages'
+    | '/admin/my-schedule'
     | '/admin/notice'
     | '/admin/requests'
     | '/admin/stats'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/_app/admin/approvals'
     | '/_app/admin/exercises'
     | '/_app/admin/messages'
+    | '/_app/admin/my-schedule'
     | '/_app/admin/notice'
     | '/_app/admin/requests'
     | '/_app/admin/stats'
@@ -516,6 +528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminNoticeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/my-schedule': {
+      id: '/_app/admin/my-schedule'
+      path: '/admin/my-schedule'
+      fullPath: '/admin/my-schedule'
+      preLoaderRoute: typeof AppAdminMyScheduleRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/messages': {
       id: '/_app/admin/messages'
       path: '/admin/messages'
@@ -578,6 +597,7 @@ interface AppRouteChildren {
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminExercisesRoute: typeof AppAdminExercisesRoute
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
+  AppAdminMyScheduleRoute: typeof AppAdminMyScheduleRoute
   AppAdminNoticeRoute: typeof AppAdminNoticeRoute
   AppAdminRequestsRoute: typeof AppAdminRequestsRoute
   AppAdminStatsRoute: typeof AppAdminStatsRoute
@@ -594,6 +614,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminExercisesRoute: AppAdminExercisesRoute,
   AppAdminMessagesRoute: AppAdminMessagesRoute,
+  AppAdminMyScheduleRoute: AppAdminMyScheduleRoute,
   AppAdminNoticeRoute: AppAdminNoticeRoute,
   AppAdminRequestsRoute: AppAdminRequestsRoute,
   AppAdminStatsRoute: AppAdminStatsRoute,

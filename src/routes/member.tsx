@@ -17,7 +17,7 @@ export const Route = createFileRoute("/member")({
 
 const tabs = [
   { to: "/member/home", label: "홈", icon: Home },
-  { to: "/member/booking", label: "예약", icon: Calendar },
+  { to: "/member/booking", label: "내 일정", icon: Calendar },
   { to: "/member/exercises", label: "운동", icon: Activity },
   { to: "/member/messages", label: "메시지", icon: MessageCircle },
   { to: "/member/records", label: "기록", icon: ClipboardList },

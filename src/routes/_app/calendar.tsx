@@ -91,16 +91,18 @@ function CalendarPage() {
       toast.error("회원을 선택해주세요.");
       return;
     }
+    const dateStr = format(selected, "yyyy-MM-dd");
     setSchedules((prev) => [
       ...prev,
       {
         id: uid(),
         memberId,
-        date: format(selected, "yyyy-MM-dd"),
+        date: dateStr,
         time,
         attended: null,
       },
     ]);
+    import("@/lib/availability").then((m) => m.notifyMemberOfSchedule(memberId, dateStr, time));
     toast.success("일정이 추가되었습니다.");
     setOpen(false);
     setMemberId("");
