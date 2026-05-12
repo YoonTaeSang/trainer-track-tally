@@ -4,7 +4,7 @@ import { Users, Calendar, ClipboardCheck, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMembers, useSchedules } from "@/lib/store";
-import { useRole } from "@/hooks/use-role";
+
 import { MonthTimeline } from "@/components/month-timeline";
 
 export const Route = createFileRoute("/_app/admin/")({
