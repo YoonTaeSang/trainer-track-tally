@@ -155,6 +155,7 @@ function ApprovalsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>이름</TableHead>
+                  <TableHead>이메일</TableHead>
                   <TableHead>전화번호</TableHead>
                   <TableHead>가입일</TableHead>
                   <TableHead>권한</TableHead>
@@ -164,7 +165,7 @@ function ApprovalsPage() {
               <TableBody>
                 {pending.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
                       승인 대기중인 회원이 없습니다.
                     </TableCell>
                   </TableRow>
@@ -172,6 +173,9 @@ function ApprovalsPage() {
                   pending.map((m) => (
                     <TableRow key={m.id}>
                       <TableCell className="font-medium">{m.name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {m.email || "—"}
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {m.phone || "—"}
                       </TableCell>

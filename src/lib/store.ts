@@ -19,6 +19,7 @@ export type Member = {
   userId?: string | null;
   name: string;
   phone: string;
+  email?: string | null;
   joinedAt: string;
   totalSessions: number;
   usedSessions: number;
@@ -99,6 +100,7 @@ const mapMember = {
     userId: r.user_id ?? null,
     name: r.name ?? "",
     phone: r.phone ?? "",
+    email: r.email ?? null,
     joinedAt: r.joined_at ?? "",
     totalSessions: r.total_sessions ?? 0,
     usedSessions: r.used_sessions ?? 0,
@@ -111,6 +113,7 @@ const mapMember = {
     user_id: m.userId ?? null,
     name: m.name ?? "",
     phone: m.phone ?? "",
+    email: m.email ?? null,
     joined_at: m.joinedAt || new Date().toISOString().slice(0, 10),
     total_sessions: m.totalSessions ?? 0,
     used_sessions: m.usedSessions ?? 0,

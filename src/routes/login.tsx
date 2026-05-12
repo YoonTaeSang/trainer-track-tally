@@ -8,6 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Dumbbell } from "lucide-react";
 
@@ -48,7 +65,13 @@ function LoginPage() {
   const [signupBirth, setSignupBirth] = useState("");
   const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
   const [signupAddress, setSignupAddress] = useState("");
-  
+
+  const [signupSuccessOpen, setSignupSuccessOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -114,7 +137,27 @@ function LoginPage() {
       toast.error(error.message.includes("already registered") ? "이미 가입된 이메일입니다" : error.message);
       return;
     }
-    toast.success("가입 완료! 이메일 인증 후 로그인해주세요");
+    setSignupSuccessOpen(true);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      emailSchema.parse(forgotEmail);
+    } catch (err) {
+      if (err instanceof z.ZodError) toast.error(err.errors[0].message);
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setForgotSent(true);
   };
 
   const handleGoogle = async () => {
@@ -210,11 +253,84 @@ function LoginPage() {
             Google로 계속하기
           </Button>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => { setForgotOpen(true); setForgotSent(false); setForgotEmail(""); }}
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+            >
+              아이디 · 비밀번호 찾기
+            </button>
+          </div>
+
+          <p className="mt-2 text-center text-xs text-muted-foreground">
             <Link to="/login" className="underline">홈으로</Link>
           </p>
         </CardContent>
       </Card>
+
+      {/* Signup success modal */}
+      <AlertDialog open={signupSuccessOpen} onOpenChange={setSignupSuccessOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원가입 완료!</AlertDialogTitle>
+            <AlertDialogDescription>
+              관리자 승인 후 이용 가능합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                setSignupSuccessOpen(false);
+                window.location.assign("/login");
+              }}
+            >
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Forgot password / id dialog */}
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>아이디 · 비밀번호 찾기</DialogTitle>
+            <DialogDescription>
+              가입 시 사용한 이메일이 아이디입니다. 비밀번호를 잊으셨다면 아래에 이메일을 입력해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          {forgotSent ? (
+            <div className="space-y-4 py-2">
+              <p className="text-sm">
+                입력하신 이메일로 재설정 링크를 보냈습니다. 메일함을 확인해주세요.
+              </p>
+              <DialogFooter>
+                <Button onClick={() => setForgotOpen(false)} className="w-full">확인</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">이메일</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full" disabled={forgotLoading}>
+                  비밀번호 재설정 메일 보내기
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
