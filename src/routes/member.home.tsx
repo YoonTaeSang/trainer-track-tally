@@ -239,7 +239,6 @@ function MemberHome() {
                   setViewMonth((m) => (m === 11 ? 0 : m + 1));
                   if (viewMonth === 11) setViewYear((y) => y + 1);
                 }}
-                disabled={viewYear > today.getFullYear() || (viewYear === today.getFullYear() && viewMonth >= today.getMonth())}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -254,7 +253,7 @@ function MemberHome() {
               </div>
             ))}
             {cells.map((d, i) => {
-              const isToday = d === today.getDate();
+              const isToday = d === today.getDate() && viewYear === today.getFullYear() && viewMonth === today.getMonth();
               const attended = d != null && attendedDays.has(d);
               return (
                 <div
