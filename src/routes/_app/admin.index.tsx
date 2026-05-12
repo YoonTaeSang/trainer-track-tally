@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMembers, useSchedules } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
-import { TodayTimeline } from "@/components/today-timeline";
+import { MonthTimeline } from "@/components/month-timeline";
 
 export const Route = createFileRoute("/_app/admin/")({
   component: AdminDashboard,
