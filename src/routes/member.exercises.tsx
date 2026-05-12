@@ -48,6 +48,12 @@ function ExercisesPage() {
     });
   }, [items, tab, search]);
 
+  const handleCardClick = (youtube_url: string | null) => {
+    if (youtube_url) {
+      window.location.href = youtube_url;
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -91,13 +97,10 @@ function ExercisesPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((e) => (
-            <a
+            <div
               key={e.id}
-              href={e.youtube_url ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(ev) => { if (!e.youtube_url) ev.preventDefault(); }}
-              className="block text-inherit no-underline"
+              onClick={() => handleCardClick(e.youtube_url)}
+              style={{ cursor: e.youtube_url ? 'pointer' : 'default' }}
             >
               <Card className="overflow-hidden transition hover:border-primary/50">
                 <div className="flex aspect-video w-full items-center justify-center bg-muted text-muted-foreground">
@@ -129,7 +132,7 @@ function ExercisesPage() {
                   </div>
                 </CardContent>
               </Card>
-            </a>
+            </div>
           ))}
         </div>
       )}
