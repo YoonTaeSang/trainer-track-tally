@@ -78,3 +78,25 @@ export async function fetchTimeOff(trainerId?: string) {
 }
 
 export const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+/** Send "new PT schedule" notification to a member by member id. */
+export async function notifyMemberOfSchedule(memberId: string, date: string, time: string) {
+  try {
+    const { data: m } = await (supabase as any)
+      .from("members")
+      .select("user_id,name")
+      .eq("id", memberId)
+      .maybeSingle();
+    const userId = m?.user_id;
+    if (!userId) return;
+    const [y, mo, d] = date.split("-").map(Number);
+    await (supabase as any).from("notifications").insert({
+      user_id: userId,
+      type: "schedule_added",
+      title: "새 PT 일정 등록",
+      body: `다음 PT 일정이 등록되었습니다. ${mo}월 ${d}일 ${time}`,
+    });
+  } catch (e) {
+    console.error("[notifyMemberOfSchedule]", e);
+  }
+}
