@@ -15,8 +15,6 @@ export const Route = createFileRoute("/_app/admin/")({
 function AdminDashboard() {
   const [members] = useMembers();
   const [schedules] = useSchedules();
-  const { role } = useRole();
-  const isTrainer = role === "trainer";
 
   const today = new Date().toISOString().slice(0, 10);
   const monthPrefix = today.slice(0, 7);
