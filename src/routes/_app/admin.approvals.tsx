@@ -155,6 +155,7 @@ function ApprovalsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>이름</TableHead>
+                  <TableHead>이메일</TableHead>
                   <TableHead>전화번호</TableHead>
                   <TableHead>가입일</TableHead>
                   <TableHead>권한</TableHead>
