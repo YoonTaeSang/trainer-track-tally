@@ -119,10 +119,12 @@ function MembersPage() {
       toast.error("날짜와 시간을 입력해주세요.");
       return;
     }
+    const memberId = scheduleFor.id;
     setSchedules((prev) => [
       ...prev,
-      { id: uid(), memberId: scheduleFor.id, date: schedDate, time: schedTime, attended: null },
+      { id: uid(), memberId, date: schedDate, time: schedTime, attended: null },
     ]);
+    import("@/lib/availability").then((m) => m.notifyMemberOfSchedule(memberId, schedDate, schedTime));
     toast.success(`${scheduleFor.name} 회원의 일정이 추가되었습니다.`);
     setScheduleFor(null);
   };
