@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,27 +13,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle2, Clock, CalendarClock } from "lucide-react";
+import { CalendarClock, Clock, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, usePublicTrainers, uid } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
-import { BookingRequestButtons } from "@/components/booking-request-button";
+import {
+  fetchAvailability,
+  fetchTimeOff,
+  slotsFor,
+  toDateStr,
+  type Availability,
+  type TimeOff,
+} from "@/lib/availability";
+import { isAtLeastOneDayAhead } from "@/components/booking-request-button";
 
 export const Route = createFileRoute("/member/booking")({
-  component: BookingPage,
-  head: () => ({ meta: [{ title: "예약 | PT Studio" }] }),
+  component: MyScheduleMemberPage,
+  head: () => ({ meta: [{ title: "내 일정 | PT Studio" }] }),
 });
-
-const OPERATING_HOURS = Array.from({ length: 13 }, (_, i) => `${String(i + 9).padStart(2, "0")}:00`);
-const WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
-
-function toDateStr(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 type RequestRow = {
   id: string;
@@ -46,13 +46,21 @@ type RequestRow = {
   created_at: string;
 };
 
-function BookingPage() {
+function MyScheduleMemberPage() {
   const { user } = useAuth();
-  const [members, setMembers] = useMembers();
-  const [schedules, setSchedules] = useSchedules();
+  const [members] = useMembers();
+  const [schedules] = useSchedules();
   const [trainers] = usePublicTrainers();
   const [profileName, setProfileName] = useState("");
   const [requests, setRequests] = useState<RequestRow[]>([]);
+  const [availability, setAvailability] = useState<Availability[]>([]);
+  const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
+
+  // change-request dialog state
+  const [changing, setChanging] = useState<Schedule | null>(null);
+  const [reqDate, setReqDate] = useState<string>(toDateStr(new Date()));
+  const [reqTime, setReqTime] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +71,16 @@ function BookingPage() {
       .maybeSingle()
       .then(({ data }) => setProfileName(data?.name ?? ""));
   }, [user]);
+
+  const myMember = useMemo(() => {
+    if (!profileName) return members[0];
+    return members.find((m) => m.name === profileName) ?? members[0];
+  }, [members, profileName]);
+
+  const myTrainer = useMemo(
+    () => (myMember?.trainerId ? trainers.find((t) => t.id === myMember.trainerId) ?? null : null),
+    [myMember, trainers]
+  );
 
   const loadRequests = useCallback(async () => {
     if (!user) return;
@@ -80,7 +98,7 @@ function BookingPage() {
     loadRequests();
     if (!user) return;
     const ch = supabase
-      .channel(`booking_requests:${user.id}`)
+      .channel(`mybook_reqs:${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -97,71 +115,25 @@ function BookingPage() {
     };
   }, [user, loadRequests]);
 
-  const myMember = useMemo(() => {
-    if (!profileName) return members[0];
-    return members.find((m) => m.name === profileName) ?? members[0];
-  }, [members, profileName]);
+  // load trainer availability when changing dialog opens
+  useEffect(() => {
+    if (!changing || !myTrainer) return;
+    Promise.all([fetchAvailability(myTrainer.id), fetchTimeOff(myTrainer.id)])
+      .then(([a, t]) => {
+        setAvailability(a);
+        setTimeOff(t);
+      })
+      .catch((e) => toast.error(e instanceof Error ? e.message : "가용 시간 조회 실패"));
+  }, [changing, myTrainer]);
 
-  const myTrainer = useMemo(
-    () => (myMember?.trainerId ? trainers.find((t) => t.id === myMember.trainerId) ?? null : null),
-    [myMember, trainers]
-  );
+  const myUpcomingSchedules = useMemo(() => {
+    if (!myMember) return [];
+    const todayStr = toDateStr(new Date());
+    return schedules
+      .filter((s) => s.memberId === myMember.id && s.attended === null && s.date >= todayStr)
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  }, [schedules, myMember]);
 
-  const dates = useMemo(() => {
-    const arr: Date[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      arr.push(d);
-    }
-    return arr;
-  }, []);
-
-  const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
-  const [pendingSlot, setPendingSlot] = useState<string | null>(null);
-
-  const takenTimes = useMemo(() => {
-    if (!myTrainer) return new Set<string>();
-    const trainerMemberIds = new Set(
-      members.filter((m) => m.trainerId === myTrainer.id).map((m) => m.id)
-    );
-    return new Set(
-      schedules
-        .filter((s) => s.date === selectedDate && trainerMemberIds.has(s.memberId))
-        .map((s) => s.time)
-    );
-  }, [schedules, members, myTrainer, selectedDate]);
-
-  const myBookedTimes = useMemo(() => {
-    if (!myMember) return new Set<string>();
-    return new Set(
-      schedules.filter((s) => s.date === selectedDate && s.memberId === myMember.id).map((s) => s.time)
-    );
-  }, [schedules, myMember, selectedDate]);
-
-  const remain = myMember ? myMember.totalSessions - myMember.usedSessions : 0;
-
-  const confirmBooking = () => {
-    if (!pendingSlot || !myMember) return;
-    if (remain <= 0) {
-      toast.error("잔여 세션이 부족합니다. 충전 후 이용해주세요.");
-      setPendingSlot(null);
-      return;
-    }
-    setSchedules((prev) => [
-      ...prev,
-      { id: uid(), memberId: myMember.id, date: selectedDate, time: pendingSlot, attended: null },
-    ]);
-    setMembers((prev) =>
-      prev.map((m) => (m.id === myMember.id ? { ...m, usedSessions: m.usedSessions + 1 } : m))
-    );
-    toast.success(`${selectedDate} ${pendingSlot} 예약이 완료되었습니다.`);
-    setPendingSlot(null);
-  };
-
-  // Map original_schedule_id -> latest pending request
   const pendingByScheduleId = useMemo(() => {
     const m = new Map<string, RequestRow>();
     for (const r of requests) {
@@ -172,13 +144,69 @@ function BookingPage() {
     return m;
   }, [requests]);
 
-  const myUpcomingSchedules = useMemo(() => {
-    if (!myMember) return [];
-    const todayStr = toDateStr(new Date());
-    return schedules
-      .filter((s) => s.memberId === myMember.id && s.attended === null && s.date >= todayStr)
-      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-  }, [schedules, myMember]);
+  // Slots for selected change-request date
+  const candidateSlots = useMemo(() => {
+    if (!changing || !myTrainer) return [];
+    const all = slotsFor(myTrainer.id, reqDate, availability, timeOff);
+    const trainerMemberIds = new Set(
+      members.filter((m) => m.trainerId === myTrainer.id).map((m) => m.id)
+    );
+    const taken = new Set(
+      schedules
+        .filter((s) => s.date === reqDate && trainerMemberIds.has(s.memberId) && s.id !== changing.id)
+        .map((s) => s.time)
+    );
+    return all.map((slot) => ({ slot, taken: taken.has(slot) }));
+  }, [changing, myTrainer, reqDate, availability, timeOff, members, schedules]);
+
+  const openChange = (s: Schedule) => {
+    if (!isAtLeastOneDayAhead(s.date, s.time)) {
+      toast.error("수업 1일 전까지만 변경 신청 가능합니다.");
+      return;
+    }
+    setChanging(s);
+    setReqDate(s.date);
+    setReqTime(null);
+  };
+
+  const submitChange = async () => {
+    if (!changing || !user || !myMember || !reqTime) {
+      toast.error("새 시간을 선택해주세요.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const trainerUserId = myTrainer?.userId ?? null;
+      const { error } = await supabase.from("schedule_requests").insert({
+        member_user_id: user.id,
+        trainer_user_id: trainerUserId,
+        member_name: myMember.name,
+        trainer_name: myTrainer?.name ?? null,
+        original_schedule_id: changing.id,
+        original_date: changing.date,
+        original_time: changing.time,
+        request_type: "change",
+        requested_date: reqDate,
+        requested_time: reqTime,
+      });
+      if (error) throw error;
+      if (trainerUserId) {
+        await supabase.from("notifications").insert({
+          user_id: trainerUserId,
+          type: "trainer_message",
+          title: "변경 신청",
+          body: `${myMember.name} · ${changing.date} ${changing.time} → ${reqDate} ${reqTime}`,
+        });
+      }
+      toast.success("변경 요청이 접수되었습니다. 트레이너 승인을 기다려주세요.");
+      setChanging(null);
+      loadRequests();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "오류가 발생했습니다");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!myMember) {
     return (
@@ -190,25 +218,39 @@ function BookingPage() {
     );
   }
 
+  const remain = myMember.totalSessions - myMember.usedSessions;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold tracking-tight">PT 예약</h1>
+          <h1 className="text-lg font-bold tracking-tight">내 일정</h1>
           <p className="text-xs text-muted-foreground">담당: {myTrainer?.name ?? "미배정"}</p>
         </div>
         <Badge variant={remain <= 2 ? "destructive" : "secondary"}>잔여 {remain}회</Badge>
       </div>
 
-      {/* My upcoming schedules with cancel/change */}
-      {myUpcomingSchedules.length > 0 && (
-        <Card>
-          <CardContent className="space-y-2 pt-4">
-            <p className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <CalendarClock className="h-3 w-3" /> 예정된 내 예약
+      <div className="flex items-start gap-2 rounded-md border bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          PT 일정은 트레이너가 직접 등록합니다. 일정 변경이 필요하면 아래 "변경 요청" 버튼을
+          이용해주세요. (수업 1일 전까지 신청 가능)
+        </span>
+      </div>
+
+      <Card>
+        <CardContent className="space-y-2 pt-4">
+          <p className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+            <CalendarClock className="h-3 w-3" /> 등록된 내 PT 일정
+          </p>
+          {myUpcomingSchedules.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              예정된 일정이 없습니다.
             </p>
-            {myUpcomingSchedules.map((s) => {
+          ) : (
+            myUpcomingSchedules.map((s) => {
               const pending = pendingByScheduleId.get(s.id);
+              const canRequest = isAtLeastOneDayAhead(s.date, s.time);
               return (
                 <div key={s.id} className="rounded-lg border p-2.5">
                   <div className="flex items-center justify-between">
@@ -225,157 +267,113 @@ function BookingPage() {
                         승인 대기중 ({pending.request_type === "cancel" ? "취소" : "변경"})
                       </Badge>
                     ) : (
-                      user && (
-                        <BookingRequestButtons
-                          schedule={s}
-                          member={myMember}
-                          trainer={myTrainer}
-                          userId={user.id}
-                          onSubmitted={loadRequests}
-                        />
-                      )
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px]"
+                        disabled={!canRequest}
+                        onClick={() => openChange(s)}
+                      >
+                        변경 요청
+                      </Button>
                     )}
                   </div>
-                  {pending && (
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      승인 처리가 지연될 경우, 트레이너에게 개별문의해 주시기 바랍니다.
+                  {pending && pending.request_type === "change" && (
+                    <p className="mt-1 text-[11px] text-primary">
+                      → 요청: {pending.requested_date} {pending.requested_time}
                     </p>
                   )}
                 </div>
               );
-            })}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 최근 거절된 신청 */}
-      {requests.filter((r) => r.status === "rejected").slice(0, 2).map((r) => (
-        <div
-          key={r.id}
-          className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-xs"
-        >
-          <p className="font-semibold text-destructive">
-            {r.request_type === "cancel" ? "취소" : "변경"} 신청 거절됨
-          </p>
-          <p className="text-muted-foreground">
-            {r.original_date} {r.original_time}
-          </p>
-          {r.reject_reason && <p className="mt-1">사유: {r.reject_reason}</p>}
-        </div>
-      ))}
-
-      {/* 날짜 가로 스크롤 */}
-      <div className="-mx-4 overflow-x-auto px-4">
-        <div className="flex gap-2 pb-1">
-          {dates.map((d) => {
-            const ds = toDateStr(d);
-            const active = ds === selectedDate;
-            const dow = WEEK[d.getDay()];
-            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-            return (
-              <button
-                key={ds}
-                type="button"
-                onClick={() => setSelectedDate(ds)}
-                className={`flex min-w-[56px] flex-col items-center gap-0.5 rounded-xl border px-3 py-2 text-xs transition ${
-                  active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background hover:bg-accent"
-                }`}
-              >
-                <span
-                  className={`text-[10px] ${
-                    active ? "opacity-90" : isWeekend ? "text-destructive" : "text-muted-foreground"
-                  }`}
-                >
-                  {dow}
-                </span>
-                <span className="text-base font-bold">{d.getDate()}</span>
-                <span className={`text-[10px] ${active ? "opacity-80" : "text-muted-foreground"}`}>
-                  {d.getMonth() + 1}월
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="space-y-2 pt-4">
-          <p className="mb-1 text-xs font-medium text-muted-foreground">
-            {selectedDate} 예약 가능 시간
-          </p>
-          {OPERATING_HOURS.map((time) => {
-            const taken = takenTimes.has(time);
-            const mine = myBookedTimes.has(time);
-            return (
-              <button
-                key={time}
-                type="button"
-                disabled={taken}
-                onClick={() => setPendingSlot(time)}
-                className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition ${
-                  mine
-                    ? "border-primary/50 bg-primary/5"
-                    : taken
-                    ? "cursor-not-allowed border-border bg-muted/40 opacity-60"
-                    : "border-border bg-background hover:border-primary hover:bg-accent"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-semibold">{time}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {myTrainer?.name ?? "트레이너 미배정"}
-                    </p>
-                  </div>
-                </div>
-                {mine ? (
-                  <Badge>내 예약</Badge>
-                ) : taken ? (
-                  <Badge variant="outline">마감</Badge>
-                ) : (
-                  <Badge variant="secondary">예약가능</Badge>
-                )}
-              </button>
-            );
-          })}
+            })
+          )}
         </CardContent>
       </Card>
 
-      <Dialog open={!!pendingSlot} onOpenChange={(v) => !v && setPendingSlot(null)}>
-        <DialogContent>
+      {/* Recent rejected */}
+      {requests
+        .filter((r) => r.status === "rejected")
+        .slice(0, 2)
+        .map((r) => (
+          <div
+            key={r.id}
+            className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-xs"
+          >
+            <p className="font-semibold text-destructive">변경 신청 거절됨</p>
+            <p className="text-muted-foreground">
+              {r.original_date} {r.original_time}
+            </p>
+            {r.reject_reason && <p className="mt-1">사유: {r.reject_reason}</p>}
+          </div>
+        ))}
+
+      {/* Change-request dialog */}
+      <Dialog open={!!changing} onOpenChange={(v) => !v && setChanging(null)}>
+        <DialogContent className="max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-primary" /> 예약 확인
-            </DialogTitle>
+            <DialogTitle>일정 변경 요청</DialogTitle>
             <DialogDescription>
-              아래 일정으로 PT를 예약합니다. 잔여 세션이 1회 차감됩니다.
+              트레이너 가능 시간 내에서만 선택할 수 있습니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1 rounded-lg border bg-muted/30 p-3 text-sm">
-            <p>
-              <span className="text-muted-foreground">날짜 · </span>
-              <span className="font-medium">{selectedDate}</span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">시간 · </span>
-              <span className="font-medium">{pendingSlot}</span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">트레이너 · </span>
-              <span className="font-medium">{myTrainer?.name ?? "미배정"}</span>
-            </p>
-            <p className="pt-1 text-xs text-muted-foreground">
-              현재 잔여 {remain}회 → 예약 후 {Math.max(remain - 1, 0)}회
-            </p>
-          </div>
+          {changing && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                기존: {changing.date} {changing.time}
+              </p>
+              <div>
+                <Label className="text-xs">새 날짜</Label>
+                <Input
+                  type="date"
+                  value={reqDate}
+                  min={toDateStr(new Date())}
+                  onChange={(e) => {
+                    setReqDate(e.target.value);
+                    setReqTime(null);
+                  }}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">새 시간</Label>
+                {candidateSlots.length === 0 ? (
+                  <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    이 날에는 트레이너 가능 시간이 없습니다 (휴무 또는 미설정).
+                  </p>
+                ) : (
+                  <div className="grid max-h-48 grid-cols-3 gap-1.5 overflow-y-auto p-0.5">
+                    {candidateSlots.map(({ slot, taken }) => {
+                      const active = reqTime === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={taken}
+                          onClick={() => setReqTime(slot)}
+                          className={`flex items-center justify-center gap-1 rounded-md border px-1 py-1.5 text-xs transition ${
+                            active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : taken
+                              ? "cursor-not-allowed border-border bg-muted text-muted-foreground"
+                              : "border-border bg-background hover:bg-accent"
+                          }`}
+                        >
+                          <Clock className="h-3 w-3" />
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingSlot(null)}>
+            <Button variant="outline" onClick={() => setChanging(null)}>
               취소
             </Button>
-            <Button onClick={confirmBooking}>예약 신청</Button>
+            <Button onClick={submitChange} disabled={submitting || !reqTime}>
+              요청 보내기
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
