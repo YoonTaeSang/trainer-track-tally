@@ -44,6 +44,7 @@ const allItems = [
   { key: "trainers", title: "트레이너 관리", url: "/admin/trainers", icon: UserCog, roles: ["admin"] },
   { key: "approvals", title: "가입 승인", url: "/admin/approvals", icon: UserCheck, roles: ["admin"] },
   { key: "calendar", title: "일정 캘린더", url: "/calendar", icon: Calendar, roles: ["admin", "trainer"] },
+  { key: "my-schedule", title: "내 스케줄 설정", url: "/admin/my-schedule", icon: CalendarCog, roles: ["trainer", "admin"] },
   { key: "attendance", title: "출석 체크", url: "/attendance", icon: ClipboardCheck, roles: ["admin", "trainer"] },
   { key: "exercises", title: "운동 라이브러리", url: "/admin/exercises", icon: Activity, roles: ["admin", "trainer"] },
   { key: "workouts", title: "운동기록 관리", url: "/admin/workouts", icon: NotebookPen, roles: ["admin", "trainer"] },
