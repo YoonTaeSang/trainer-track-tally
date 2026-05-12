@@ -253,11 +253,84 @@ function LoginPage() {
             Google로 계속하기
           </Button>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => { setForgotOpen(true); setForgotSent(false); setForgotEmail(""); }}
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+            >
+              아이디 · 비밀번호 찾기
+            </button>
+          </div>
+
+          <p className="mt-2 text-center text-xs text-muted-foreground">
             <Link to="/login" className="underline">홈으로</Link>
           </p>
         </CardContent>
       </Card>
+
+      {/* Signup success modal */}
+      <AlertDialog open={signupSuccessOpen} onOpenChange={setSignupSuccessOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원가입 완료!</AlertDialogTitle>
+            <AlertDialogDescription>
+              관리자 승인 후 이용 가능합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                setSignupSuccessOpen(false);
+                window.location.assign("/login");
+              }}
+            >
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Forgot password / id dialog */}
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>아이디 · 비밀번호 찾기</DialogTitle>
+            <DialogDescription>
+              가입 시 사용한 이메일이 아이디입니다. 비밀번호를 잊으셨다면 아래에 이메일을 입력해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          {forgotSent ? (
+            <div className="space-y-4 py-2">
+              <p className="text-sm">
+                입력하신 이메일로 재설정 링크를 보냈습니다. 메일함을 확인해주세요.
+              </p>
+              <DialogFooter>
+                <Button onClick={() => setForgotOpen(false)} className="w-full">확인</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">이메일</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full" disabled={forgotLoading}>
+                  비밀번호 재설정 메일 보내기
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
