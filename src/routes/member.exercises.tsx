@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Dumbbell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,13 +91,13 @@ function ExercisesPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((e) => (
-            <Link
+            <button
               key={e.id}
-              to="/member/exercises/$exerciseId"
-              params={{ exerciseId: e.id }}
-              className="block"
+              onClick={() => e.youtube_url && window.open(e.youtube_url, '_blank')}
+              disabled={!e.youtube_url}
+              className="block cursor-pointer text-left disabled:cursor-default"
             >
-              <Card className="overflow-hidden transition hover:border-primary/50">
+              <Card className="overflow-hidden transition hover:border-primary/50 disabled:hover:border-border">
                 <div className="flex aspect-video w-full items-center justify-center bg-muted text-muted-foreground">
                   {e.thumbnail_url ? (
                     <img
@@ -127,7 +127,7 @@ function ExercisesPage() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
+            </button>
           ))}
         </div>
       )}
