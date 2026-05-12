@@ -14,6 +14,7 @@ import {
   CalendarClock,
   MessageCircle,
   UserCheck,
+  CalendarCog,
 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useRole } from "@/hooks/use-role";
