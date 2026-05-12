@@ -12,8 +12,10 @@ function IndexRedirect() {
 
   useEffect(() => {
     if (loading) return;
-    if (role === "admin" || role === "trainer") {
+    if (role === "admin") {
       navigate({ to: "/admin", replace: true });
+    } else if (role === "trainer") {
+      navigate({ to: "/admin/trainers", replace: true });
     } else if (role === "member") {
       navigate({ to: "/member", replace: true });
     } else {
