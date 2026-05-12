@@ -464,6 +464,57 @@ export type Database = {
           },
         ]
       }
+      trainer_availability: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          trainer_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          trainer_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          trainer_id?: string
+          weekday?: number
+        }
+        Relationships: []
+      }
+      trainer_time_off: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          reason: string
+          trainer_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          reason?: string
+          trainer_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          reason?: string
+          trainer_id?: string
+        }
+        Relationships: []
+      }
       trainers: {
         Row: {
           created_at: string
