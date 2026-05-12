@@ -65,7 +65,13 @@ function LoginPage() {
   const [signupBirth, setSignupBirth] = useState("");
   const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
   const [signupAddress, setSignupAddress] = useState("");
-  
+
+  const [signupSuccessOpen, setSignupSuccessOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
