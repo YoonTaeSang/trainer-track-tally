@@ -90,6 +90,14 @@ function LoginPage() {
       if (err instanceof z.ZodError) toast.error(err.errors[0].message);
       return;
     }
+
+    // Dev admin bypass
+    if (loginEmail === "admin@test.com" && loginPassword === "admin123") {
+      localStorage.setItem("dev_admin_mode", "true");
+      navigate({ to: "/admin" });
+      return;
+    }
+
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({
       email: loginEmail,

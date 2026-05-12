@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { useMembers, useSchedules, uid } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
+import { MonthTimeline } from "@/components/month-timeline";
 
 export const Route = createFileRoute("/_app/calendar")({
   component: CalendarPage,
@@ -48,18 +49,23 @@ function CalendarPage() {
   const { role } = useRole();
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isTrainer = role === "trainer";
+  const isAdmin = role === "admin";
+
   const visibleMemberIds = useMemo(() => {
     if (!isTrainer || !currentTrainerId) return new Set(members.map((m) => m.id));
     return new Set(members.filter((m) => m.trainerId === currentTrainerId).map((m) => m.id));
   }, [members, isTrainer, currentTrainerId]);
+
   const schedules = useMemo(
     () => (isTrainer ? allSchedules.filter((s) => visibleMemberIds.has(s.memberId)) : allSchedules),
     [allSchedules, isTrainer, visibleMemberIds]
   );
+
   const visibleMembers = useMemo(
     () => (isTrainer ? members.filter((m) => visibleMemberIds.has(m.id)) : members),
     [members, isTrainer, visibleMemberIds]
   );
+
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date | null>(new Date());
   const [open, setOpen] = useState(false);
@@ -108,6 +114,8 @@ function CalendarPage() {
     setMemberId("");
   };
 
+  const showMonthTimeline = isAdmin || isTrainer;
+
   return (
     <div className="space-y-6">
       <div>
@@ -115,102 +123,155 @@ function CalendarPage() {
         <p className="text-sm text-muted-foreground">PT 일정을 등록하고 관리합니다.</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => setCursor(subMonths(cursor, 1))}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="min-w-[120px] text-center text-lg font-semibold">
-                  {format(cursor, "yyyy년 M월")}
-                </h2>
-                <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}>
-                  <ChevronRight className="h-4 w-4" />
+      {showMonthTimeline ? (
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <MonthTimeline onDateSelect={(d) => setSelected(d)} />
+          <Card>
+            <CardContent className="pt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-semibold">
+                  {selected ? format(selected, "M월 d일") : "날짜 선택"}
+                </h3>
+                <Button size="sm" onClick={() => setOpen(true)} disabled={!selected}>
+                  <Plus className="mr-1 h-4 w-4" /> 추가
                 </Button>
               </div>
-              <Button variant="outline" onClick={() => setCursor(new Date())}>오늘</Button>
-            </div>
+              {selectedSchedules.length === 0 ? (
+                <p className="text-sm text-muted-foreground">일정이 없습니다.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {selectedSchedules.map((s) => {
+                    const m = members.find((x) => x.id === s.memberId);
+                    return (
+                      <li key={s.id} className="flex items-center justify-between rounded-md border p-3">
+                        <div>
+                          <p className="font-medium">{m?.name ?? "(삭제됨)"}</p>
+                          <p className="text-xs text-muted-foreground">{s.time}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-xs",
+                            s.attended === true && "bg-primary/10 text-primary",
+                            s.attended === false && "bg-destructive/10 text-destructive",
+                            s.attended === null && "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" onClick={() => setCursor(subMonths(cursor, 1))}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <h2 className="min-w-[120px] text-center text-lg font-semibold">
+                      {format(cursor, "yyyy년 M월")}
+                    </h2>
+                    <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button variant="outline" onClick={() => setCursor(new Date())}>오늘</Button>
+                </div>
 
-            <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
-              {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
-                <div key={d} className="py-2">{d}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {days.map((d) => {
-                const key = format(d, "yyyy-MM-dd");
-                const items = byDate.get(key) ?? [];
-                const inMonth = isSameMonth(d, cursor);
-                const isSel = selected && isSameDay(d, selected);
-                const isToday = isSameDay(d, new Date());
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelected(d)}
-                    className={cn(
-                      "flex min-h-[80px] flex-col rounded-md border p-2 text-left text-xs transition-colors",
-                      inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
-                      isSel && "border-primary ring-1 ring-primary",
-                      !isSel && "hover:bg-accent"
-                    )}
-                  >
-                    <span className={cn("text-sm font-medium", isToday && "text-primary")}>
-                      {format(d, "d")}
-                    </span>
-                    {items.length > 0 && (
-                      <span className="mt-auto inline-flex w-fit items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                        {items.length}건
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold">
-                {selected ? format(selected, "M월 d일") : "날짜 선택"}
-              </h3>
-              <Button size="sm" onClick={() => setOpen(true)} disabled={!selected}>
-                <Plus className="mr-1 h-4 w-4" /> 추가
-              </Button>
-            </div>
-            {selectedSchedules.length === 0 ? (
-              <p className="text-sm text-muted-foreground">일정이 없습니다.</p>
-            ) : (
-              <ul className="space-y-2">
-                {selectedSchedules.map((s) => {
-                  const m = members.find((x) => x.id === s.memberId);
-                  return (
-                    <li key={s.id} className="flex items-center justify-between rounded-md border p-3">
-                      <div>
-                        <p className="font-medium">{m?.name ?? "(삭제됨)"}</p>
-                        <p className="text-xs text-muted-foreground">{s.time}</p>
-                      </div>
-                      <span
+                <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
+                  {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
+                    <div key={d} className="py-2">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {days.map((d) => {
+                    const key = format(d, "yyyy-MM-dd");
+                    const items = byDate.get(key) ?? [];
+                    const inMonth = isSameMonth(d, cursor);
+                    const isSel = selected && isSameDay(d, selected);
+                    const isToday = isSameDay(d, new Date());
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setSelected(d)}
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs",
-                          s.attended === true && "bg-primary/10 text-primary",
-                          s.attended === false && "bg-destructive/10 text-destructive",
-                          s.attended === null && "bg-muted text-muted-foreground"
+                          "flex min-h-[80px] flex-col rounded-md border p-2 text-left text-xs transition-colors",
+                          inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
+                          isSel && "border-primary ring-1 ring-primary",
+                          !isSel && "hover:bg-accent"
                         )}
                       >
-                        {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                        <span className={cn("text-sm font-medium", isToday && "text-primary")}>
+                          {format(d, "d")}
+                        </span>
+                        {items.length > 0 && (
+                          <span className="mt-auto inline-flex w-fit items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            {items.length}건
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="font-semibold">
+                    {selected ? format(selected, "M월 d일") : "날짜 선택"}
+                  </h3>
+                  <Button size="sm" onClick={() => setOpen(true)} disabled={!selected}>
+                    <Plus className="mr-1 h-4 w-4" /> 추가
+                  </Button>
+                </div>
+                {selectedSchedules.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">일정이 없습니다.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {selectedSchedules.map((s) => {
+                      const m = members.find((x) => x.id === s.memberId);
+                      return (
+                        <li key={s.id} className="flex items-center justify-between rounded-md border p-3">
+                          <div>
+                            <p className="font-medium">{m?.name ?? "(삭제됨)"}</p>
+                            <p className="text-xs text-muted-foreground">{s.time}</p>
+                          </div>
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-xs",
+                              s.attended === true && "bg-primary/10 text-primary",
+                              s.attended === false && "bg-destructive/10 text-destructive",
+                              s.attended === null && "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" /> 일정 추가
+            </Button>
+          </div>
+        </>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

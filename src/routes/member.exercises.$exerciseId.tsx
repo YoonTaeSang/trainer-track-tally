@@ -1,13 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ChevronLeft, Heart, Dumbbell } from "lucide-react";
+import { ChevronLeft, Heart, Dumbbell, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { difficultyVariant, getYoutubeEmbedUrl } from "@/lib/exercises";
+import { difficultyVariant, getYoutubeThumbnailUrl } from "@/lib/exercises";
 
 export const Route = createFileRoute("/member/exercises/$exerciseId")({
   component: ExerciseDetailPage,
@@ -101,8 +101,6 @@ function ExerciseDetailPage() {
     );
   }
 
-  const embed = getYoutubeEmbedUrl(item.youtube_url);
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -124,16 +122,22 @@ function ExerciseDetailPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-muted">
-        {embed ? (
-          <div className="aspect-video w-full">
-            <iframe
-              className="h-full w-full"
-              src={embed}
-              title={item.name}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+        {item.youtube_url ? (
+          <button
+            className="relative w-full aspect-video overflow-hidden hover:brightness-90 transition-all"
+            onClick={() => window.open(item.youtube_url!, '_blank')}
+          >
+            <img
+              src={getYoutubeThumbnailUrl(item.youtube_url)!}
+              alt={item.name}
+              className="w-full h-full object-cover"
             />
-          </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-black/50">
+                <Play className="w-8 h-8 text-white fill-white" />
+              </div>
+            </div>
+          </button>
         ) : item.thumbnail_url ? (
           <img src={item.thumbnail_url} alt={item.name} className="aspect-video w-full object-cover" />
         ) : (

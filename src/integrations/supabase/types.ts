@@ -342,6 +342,7 @@ export type Database = {
           gender: string | null
           id: string
           name: string
+          nickname: string | null
           phone: string | null
         }
         Insert: {
@@ -352,6 +353,7 @@ export type Database = {
           gender?: string | null
           id: string
           name?: string
+          nickname?: string | null
           phone?: string | null
         }
         Update: {
@@ -362,6 +364,7 @@ export type Database = {
           gender?: string | null
           id?: string
           name?: string
+          nickname?: string | null
           phone?: string | null
         }
         Relationships: []

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
@@ -178,6 +178,74 @@ function MembersPage() {
     .filter((m) => m.status !== "pending" && m.status !== "rejected")
     .filter((m) => m.name.includes(search) || m.phone.includes(search));
 
+  const groups = useMemo(() => {
+    if (!isAdmin) return null;
+    const unassigned = filtered.filter((m) => !m.trainerId);
+    const trainerGroups = trainers
+      .map((t) => ({ trainer: t, members: filtered.filter((m) => m.trainerId === t.id) }))
+      .filter((g) => g.members.length > 0);
+    return { unassigned, trainerGroups };
+  }, [isAdmin, filtered, trainers]);
+
+  const renderMemberRow = (m: Member) => {
+    const remain = m.totalSessions - m.usedSessions;
+    const isInactive = m.status === "inactive";
+    return (
+      <TableRow key={m.id} className={isInactive ? "opacity-50" : undefined}>
+        <TableCell className="font-medium">
+          <Link to="/members/$memberId" params={{ memberId: m.id }} className="hover:underline">
+            {m.name}
+          </Link>
+          {isInactive && <Badge variant="outline" className="ml-2 text-[10px]">비활성</Badge>}
+        </TableCell>
+        <TableCell>{m.phone}</TableCell>
+        <TableCell>{m.joinedAt}</TableCell>
+        <TableCell>{m.usedSessions} / {m.totalSessions}</TableCell>
+        <TableCell>
+          <Badge variant={remain <= 2 ? "destructive" : remain <= 5 ? "secondary" : "outline"}>
+            {remain}회
+          </Badge>
+        </TableCell>
+        {isAdmin && (
+          <TableCell>
+            <Select value={m.trainerId ?? "__none__"} onValueChange={(v) => assignTrainer(m.id, v)}>
+              <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="미배정" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">미배정</SelectItem>
+                {trainers.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </TableCell>
+        )}
+        <TableCell className="text-right">
+          {isAdmin && (
+            <Button size="icon" variant="ghost" onClick={() => openCharge(m)} title="세션 충전">
+              <BatteryCharging className="h-4 w-4" />
+            </Button>
+          )}
+          <Button size="icon" variant="ghost" onClick={() => openSchedule(m)} title="일정 추가">
+            <CalendarPlus className="h-4 w-4" />
+          </Button>
+          {isAdmin && (
+            <Button size="icon" variant="ghost" onClick={() => openEdit(m)} title="수정">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {isAdmin && !isInactive && (
+            <Button size="icon" variant="ghost" onClick={() => setDeactivateFor(m)} title="비활성화">
+              <UserX className="h-4 w-4" />
+            </Button>
+          )}
+          {isAdmin && isInactive && (
+            <Button size="icon" variant="ghost" onClick={() => reactivate(m.id)} title="활성화">
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -268,90 +336,31 @@ function MembersPage() {
                     등록된 회원이 없습니다.
                   </TableCell>
                 </TableRow>
-              ) : (
-                filtered.map((m) => {
-                  const remain = m.totalSessions - m.usedSessions;
-                  const isInactive = m.status === "inactive";
-                  return (
-                    <TableRow key={m.id} className={isInactive ? "opacity-50" : undefined}>
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/members/$memberId"
-                          params={{ memberId: m.id }}
-                          className="hover:underline"
-                        >
-                          {m.name}
-                        </Link>
-                        {isInactive && (
-                          <Badge variant="outline" className="ml-2 text-[10px]">
-                            비활성
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{m.phone}</TableCell>
-                      <TableCell>{m.joinedAt}</TableCell>
-                      <TableCell>{m.usedSessions} / {m.totalSessions}</TableCell>
-                      <TableCell>
-                        <Badge variant={remain <= 2 ? "destructive" : remain <= 5 ? "secondary" : "outline"}>
-                          {remain}회
-                        </Badge>
-                      </TableCell>
-                      {isAdmin && (
-                        <TableCell>
-                          <Select
-                            value={m.trainerId ?? "__none__"}
-                            onValueChange={(v) => assignTrainer(m.id, v)}
-                          >
-                            <SelectTrigger className="h-8 w-[160px]">
-                              <SelectValue placeholder="미배정" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">미배정</SelectItem>
-                              {trainers.map((t) => (
-                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+              ) : isAdmin && groups ? (
+                <>
+                  {groups.unassigned.length > 0 && (
+                    <>
+                      <TableRow>
+                        <TableCell colSpan={7} className="bg-muted/40 py-2 text-sm font-semibold text-muted-foreground">
+                          미지정 회원 ({groups.unassigned.length}명)
                         </TableCell>
-                      )}
-                      <TableCell className="text-right">
-                        {isAdmin && (
-                          <Button size="icon" variant="ghost" onClick={() => openCharge(m)} title="세션 충전">
-                            <BatteryCharging className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button size="icon" variant="ghost" onClick={() => openSchedule(m)} title="일정 추가">
-                          <CalendarPlus className="h-4 w-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(m)} title="수정">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {isAdmin && !isInactive && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setDeactivateFor(m)}
-                            title="비활성화"
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {isAdmin && isInactive && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => reactivate(m.id)}
-                            title="활성화"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                      </TableRow>
+                      {groups.unassigned.map(renderMemberRow)}
+                    </>
+                  )}
+                  {groups.trainerGroups.map(({ trainer, members: tMembers }) => (
+                    <>
+                      <TableRow key={`header-${trainer.id}`}>
+                        <TableCell colSpan={7} className="bg-muted/40 py-2 text-sm font-semibold text-muted-foreground">
+                          {trainer.name} 트레이너 ({tMembers.length}명)
+                        </TableCell>
+                      </TableRow>
+                      {tMembers.map(renderMemberRow)}
+                    </>
+                  ))}
+                </>
+              ) : (
+                filtered.map(renderMemberRow)
               )}
             </TableBody>
           </Table>

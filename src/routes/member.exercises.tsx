@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { BODY_PARTS, difficultyVariant } from "@/lib/exercises";
+import { BODY_PARTS, difficultyVariant, getYoutubeThumbnailUrl } from "@/lib/exercises";
 
 export const Route = createFileRoute("/member/exercises")({
   component: ExercisesPage,
@@ -18,6 +18,7 @@ type Exercise = {
   body_part: string;
   difficulty: string;
   thumbnail_url: string | null;
+  youtube_url: string | null;
 };
 
 const TABS = ["전체", ...BODY_PARTS] as const;
@@ -31,7 +32,7 @@ function ExercisesPage() {
   useEffect(() => {
     supabase
       .from("exercises")
-      .select("id, name, body_part, difficulty, thumbnail_url")
+      .select("id, name, body_part, difficulty, thumbnail_url, youtube_url")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         setItems((data ?? []) as Exercise[]);
@@ -101,6 +102,12 @@ function ExercisesPage() {
                   {e.thumbnail_url ? (
                     <img
                       src={e.thumbnail_url}
+                      alt={e.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : e.youtube_url && getYoutubeThumbnailUrl(e.youtube_url) ? (
+                    <img
+                      src={getYoutubeThumbnailUrl(e.youtube_url)!}
                       alt={e.name}
                       className="h-full w-full object-cover"
                     />

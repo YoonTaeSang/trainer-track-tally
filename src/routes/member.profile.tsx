@@ -73,6 +73,7 @@ function MemberProfile() {
   const [trainers] = usePublicTrainers();
 
   const [name, setName] = useState("");
+  const [nickname, setNickname] = useState("");
   const [phone, setPhone] = useState("");
   const [createdAt, setCreatedAt] = useState<string>("");
 
@@ -107,11 +108,12 @@ function MemberProfile() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("name, phone, created_at")
+      .select("name, nickname, phone, created_at")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         setName(data?.name ?? "");
+        setNickname(data?.nickname ?? "");
         setPhone(data?.phone ?? "");
         setCreatedAt(data?.created_at ?? "");
       });
@@ -172,6 +174,16 @@ function MemberProfile() {
   };
 
 
+  const saveNickname = async () => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ nickname: nickname.trim() || null })
+      .eq("id", user.id);
+    if (error) return toast.error(error.message);
+    toast.success("닉네임이 저장되었습니다");
+  };
+
   const changePassword = async () => {
     const parsed = passwordSchema.safeParse(newPw);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
@@ -197,7 +209,7 @@ function MemberProfile() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">프로필</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <UserIcon className="h-5 w-5" />
@@ -211,6 +223,18 @@ function MemberProfile() {
                   가입일: {createdAt.slice(0, 10)}
                 </p>
               )}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">닉네임 (선택)</Label>
+            <div className="flex gap-2">
+              <Input
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="닉네임을 입력해주세요"
+                maxLength={30}
+              />
+              <Button size="sm" onClick={saveNickname}>저장</Button>
             </div>
           </div>
         </CardContent>

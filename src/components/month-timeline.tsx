@@ -56,7 +56,7 @@ const UNASSIGNED_COLOR = {
 
 const OVERLAP_THRESHOLD = 3;
 
-export function MonthTimeline() {
+export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) => void }) {
   const [members] = useMembers();
   const [schedules, setSchedules] = useSchedules();
   const [trainers] = useTrainers();
@@ -222,7 +222,7 @@ export function MonthTimeline() {
             return (
               <button
                 key={key}
-                onClick={() => setSelected(d)}
+                onClick={() => { setSelected(d); onDateSelect?.(d); }}
                 className={cn(
                   "flex min-h-[88px] flex-col gap-1 rounded-md border p-1.5 text-left text-xs transition-colors",
                   inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",

@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { BODY_PARTS, DIFFICULTIES, difficultyVariant } from "@/lib/exercises";
+import { BODY_PARTS, DIFFICULTIES, difficultyVariant, getYoutubeThumbnailUrl } from "@/lib/exercises";
 import { useRole } from "@/hooks/use-role";
 
 export const Route = createFileRoute("/_app/admin/exercises")({
@@ -113,7 +113,7 @@ function AdminExercisesPage() {
       difficulty: form.difficulty,
       description: form.description,
       youtube_url: form.youtube_url || null,
-      thumbnail_url: form.thumbnail_url || null,
+      thumbnail_url: form.youtube_url ? getYoutubeThumbnailUrl(form.youtube_url) : null,
     };
     if (editing) {
       const { error } = await supabase.from("exercises").update(payload).eq("id", editing.id);
@@ -205,14 +205,15 @@ function AdminExercisesPage() {
                   value={form.youtube_url}
                   onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>썸네일 이미지 URL (선택)</Label>
-                <Input
-                  placeholder="https://..."
-                  value={form.thumbnail_url}
-                  onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-                />
+                {form.youtube_url && getYoutubeThumbnailUrl(form.youtube_url) && (
+                  <div className="mt-2 rounded-md border overflow-hidden">
+                    <img
+                      src={getYoutubeThumbnailUrl(form.youtube_url)!}
+                      alt="YouTube thumbnail preview"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label>설명 / 자세 / 주의사항</Label>
