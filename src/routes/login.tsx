@@ -137,7 +137,27 @@ function LoginPage() {
       toast.error(error.message.includes("already registered") ? "이미 가입된 이메일입니다" : error.message);
       return;
     }
-    toast.success("가입 완료! 이메일 인증 후 로그인해주세요");
+    setSignupSuccessOpen(true);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      emailSchema.parse(forgotEmail);
+    } catch (err) {
+      if (err instanceof z.ZodError) toast.error(err.errors[0].message);
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setForgotSent(true);
   };
 
   const handleGoogle = async () => {
