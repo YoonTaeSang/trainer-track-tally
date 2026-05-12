@@ -4,8 +4,8 @@ import { Users, Calendar, ClipboardCheck, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMembers, useSchedules } from "@/lib/store";
-import { useRole } from "@/hooks/use-role";
-import { TodayTimeline } from "@/components/today-timeline";
+
+import { MonthTimeline } from "@/components/month-timeline";
 
 export const Route = createFileRoute("/_app/admin/")({
   component: AdminDashboard,
@@ -15,8 +15,6 @@ export const Route = createFileRoute("/_app/admin/")({
 function AdminDashboard() {
   const [members] = useMembers();
   const [schedules] = useSchedules();
-  const { role } = useRole();
-  const isTrainer = role === "trainer";
 
   const today = new Date().toISOString().slice(0, 10);
   const monthPrefix = today.slice(0, 7);
@@ -78,7 +76,7 @@ function AdminDashboard() {
         ))}
       </div>
 
-      {isTrainer && <TodayTimeline />}
+      <MonthTimeline />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
