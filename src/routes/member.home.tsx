@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Megaphone, Sparkles, FileSignature } from "lucide-react";
+import { Calendar, Megaphone, Sparkles, FileSignature, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,8 @@ function MemberHome() {
   const [trainers] = usePublicTrainers();
   const [profileName, setProfileName] = useState<string>("");
   const [notices, setNotices] = useState<NoticeRow[]>([]);
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
 
   const loadNotices = async (uid: string) => {
     const { data } = await supabase
@@ -109,11 +111,11 @@ function MemberHome() {
 
   const [signing, setSigning] = useState<Schedule | null>(null);
 
-  // 이번 달 출석 날짜 (Set)
+  // 출석 날짜 (Set)
   const attendedDays = useMemo(() => {
     if (!myMember) return new Set<number>();
-    const y = today.getFullYear();
-    const m = today.getMonth() + 1;
+    const y = viewYear;
+    const m = viewMonth + 1;
     const set = new Set<number>();
     schedules.forEach((s) => {
       if (s.memberId !== myMember.id) return;
@@ -123,15 +125,13 @@ function MemberHome() {
     });
     return set;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedules, myMember]);
+  }, [schedules, myMember, viewYear, viewMonth]);
 
   const remain = myMember ? myMember.totalSessions - myMember.usedSessions : 0;
 
-  // calendar grid for current month
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const firstDow = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // calendar grid for view month
+  const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
@@ -214,10 +214,37 @@ function MemberHome() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">
-            이번 달 출석 ({today.getMonth() + 1}월)
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm">
+              {viewYear}년 {viewMonth + 1}월 출석
+            </CardTitle>
+            <div className="flex gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => {
+                  setViewMonth((m) => (m === 0 ? 11 : m - 1));
+                  if (viewMonth === 0) setViewYear((y) => y - 1);
+                }}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => {
+                  setViewMonth((m) => (m === 11 ? 0 : m + 1));
+                  if (viewMonth === 11) setViewYear((y) => y + 1);
+                }}
+                disabled={viewYear > today.getFullYear() || (viewYear === today.getFullYear() && viewMonth >= today.getMonth())}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px]">
