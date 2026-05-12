@@ -91,13 +91,15 @@ function ExercisesPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((e) => (
-            <button
+            <a
               key={e.id}
-              onClick={() => e.youtube_url && window.open(e.youtube_url, '_blank')}
-              disabled={!e.youtube_url}
-              className="block cursor-pointer text-left disabled:cursor-default"
+              href={e.youtube_url ?? '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(ev) => { if (!e.youtube_url) ev.preventDefault(); }}
+              className="block text-inherit no-underline"
             >
-              <Card className="overflow-hidden transition hover:border-primary/50 disabled:hover:border-border">
+              <Card className="overflow-hidden transition hover:border-primary/50">
                 <div className="flex aspect-video w-full items-center justify-center bg-muted text-muted-foreground">
                   {e.thumbnail_url ? (
                     <img
@@ -127,7 +129,7 @@ function ExercisesPage() {
                   </div>
                 </CardContent>
               </Card>
-            </button>
+            </a>
           ))}
         </div>
       )}
