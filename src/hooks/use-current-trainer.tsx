@@ -48,10 +48,9 @@ export function useCurrentTrainer() {
     };
   }, [user]);
 
-let trainer = trainers.find((t) => t.userId === user?.id)
-    ?? (profileName
-      ? trainers.find((t) => t.name === profileName || t.name.startsWith(profileName ?? "")) ?? null
-      : null);
+let trainer = profileName
+  ? trainers.find((t) => t.name === profileName || t.name.startsWith(profileName)) ?? null
+  : null;
 
   if (DEV_BYPASS && devRole === "trainer" && !trainer) {
     trainer = trainers[0] ?? null;
