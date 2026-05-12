@@ -44,8 +44,10 @@ const addressSchema = z.string().trim().max(200).optional();
 async function redirectByRole(userId: string, navigate: ReturnType<typeof useNavigate>) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const roles = (data ?? []).map((r) => r.role as string);
-  if (roles.includes("admin") || roles.includes("trainer")) {
+  if (roles.includes("admin")) {
     navigate({ to: "/admin" });
+  } else if (roles.includes("trainer")) {
+    navigate({ to: "/admin/trainers" });
   } else {
     navigate({ to: "/member" });
   }
