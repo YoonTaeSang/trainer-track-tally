@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useMembers, useSchedules } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
+import { SignatureDialog } from "@/components/signature-dialog";
 
 export const Route = createFileRoute("/_app/attendance")({
   component: AttendancePage,
@@ -34,11 +35,13 @@ export const Route = createFileRoute("/_app/attendance")({
 function AttendancePage() {
   const [members, setMembers] = useMembers();
   const [schedules, setSchedules] = useSchedules();
+  const [publicTrainers] = usePublicTrainers();
   const { role } = useRole();
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isTrainer = role === "trainer";
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [onsiteSigning, setOnsiteSigning] = useState<Schedule | null>(null);
 
   const requestSignature = (id: string) => {
     setSchedules((prev) =>
@@ -61,30 +64,17 @@ function AttendancePage() {
   const mark = (id: string, attended: boolean) => {
     const s = schedules.find((x) => x.id === id);
     if (!s) return;
-    const wasAttended = s.attended === true;
-
     setSchedules((prev) =>
       prev.map((x) => (x.id === id ? { ...x, attended } : x))
     );
-
-    // 세션 차감 로직
-    if (attended && !wasAttended) {
-      setMembers((prev) =>
-        prev.map((m) => (m.id === s.memberId ? { ...m, usedSessions: m.usedSessions + 1 } : m))
-      );
-    } else if (!attended && wasAttended) {
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === s.memberId ? { ...m, usedSessions: Math.max(0, m.usedSessions - 1) } : m
-        )
-      );
-    }
+    // 세션 차감은 서명 완료 시점에 처리 (SignatureDialog 참고)
     toast.success(attended ? "출석 처리되었습니다." : "결석 처리되었습니다.");
   };
 
   const remove = (id: string) => {
     const s = schedules.find((x) => x.id === id);
-    if (s?.attended === true) {
+    // 이미 서명까지 완료된 일정을 삭제하면 차감된 세션을 되돌림
+    if (s?.signatureUrl) {
       setMembers((prev) =>
         prev.map((m) =>
           m.id === s.memberId ? { ...m, usedSessions: Math.max(0, m.usedSessions - 1) } : m
@@ -93,6 +83,12 @@ function AttendancePage() {
     }
     setSchedules((prev) => prev.filter((x) => x.id !== id));
     toast.success("일정이 삭제되었습니다.");
+  };
+
+  const memberById = (id: string) => members.find((m) => m.id === id);
+  const trainerForMember = (memberId: string) => {
+    const m = memberById(memberId);
+    return m?.trainerId ? publicTrainers.find((t) => t.id === m.trainerId) ?? null : null;
   };
 
   return (
@@ -179,16 +175,26 @@ function AttendancePage() {
                           <X className="mr-1 h-3 w-3" /> 결석
                         </Button>
                         {s.attended === true && !s.signatureUrl && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => requestSignature(s.id)}
-                            disabled={s.signatureRequested}
-                            className="mr-2"
-                          >
-                            <FileSignature className="mr-1 h-3 w-3" />
-                            {s.signatureRequested ? "요청됨" : "서명 요청"}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => requestSignature(s.id)}
+                              disabled={s.signatureRequested}
+                              className="mr-2"
+                            >
+                              <FileSignature className="mr-1 h-3 w-3" />
+                              {s.signatureRequested ? "요청됨" : "서명 요청"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => setOnsiteSigning(s)}
+                              className="mr-2"
+                            >
+                              <FileSignature className="mr-1 h-3 w-3" />
+                              현장 서명
+                            </Button>
+                          </>
                         )}
                         <Button size="icon" variant="ghost" onClick={() => remove(s.id)}>
                           <Trash2 className="h-4 w-4" />
@@ -217,6 +223,20 @@ function AttendancePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <SignatureDialog
+        open={!!onsiteSigning}
+        onOpenChange={(o) => !o && setOnsiteSigning(null)}
+        schedule={onsiteSigning}
+        memberName={onsiteSigning ? memberById(onsiteSigning.memberId)?.name ?? "" : ""}
+        trainerName={
+          onsiteSigning
+            ? trainerForMember(onsiteSigning.memberId)?.name ?? "트레이너"
+            : "트레이너"
+        }
+        mode="onsite"
+        memberUserId={onsiteSigning ? memberById(onsiteSigning.memberId)?.userId ?? null : null}
+      />
     </div>
   );
 }
