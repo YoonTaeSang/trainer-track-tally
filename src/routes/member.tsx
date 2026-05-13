@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from "@tan
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
-import { seedDemoData } from "@/lib/store";
+import { seedDemoData, refetchAllTables } from "@/lib/store";
 import { DEV_BYPASS } from "@/lib/dev-mode";
 import { Dumbbell, Home, Calendar, Activity, ClipboardList, User, MessageCircle } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
@@ -60,6 +60,15 @@ function MemberLayout() {
     seedDemoData();
   }, []);
   useRouteRefresh();
+
+  // Realtime RLS 회피용: 탭이 다시 활성화되면 전체 refetch
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refetchAllTables();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
 
   useEffect(() => {
     if (!user) return;

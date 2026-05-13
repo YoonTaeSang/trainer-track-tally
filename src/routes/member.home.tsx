@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Megaphone, Sparkles, FileSignature, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, refetchAllTables, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { SignatureDialog } from "@/components/signature-dialog";
 
@@ -54,6 +54,9 @@ function MemberHome() {
       .maybeSingle()
       .then(({ data }) => setProfileName(data?.name ?? ""));
 
+    // 페이지 진입 시 한 번 전체 refetch (Realtime RLS로 인해 백그라운드 갱신이 안 될 수 있어 보강)
+    refetchAllTables();
+
     loadNotices(user.id);
     const ch = supabase
       .channel(`home_notices:${user.id}`)
@@ -63,8 +66,21 @@ function MemberHome() {
         () => loadNotices(user.id)
       )
       .subscribe();
+
+    // schedules 변경(서명 요청 등)을 회원 user_id 기준으로 직접 감지하기 어려우니
+    // members.user_id 매칭으로 필터링된 채널을 별도로 운영
+    const schedCh = supabase
+      .channel(`home_schedules:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "schedules" },
+        () => refetchAllTables()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ch);
+      supabase.removeChannel(schedCh);
     };
   }, [user]);
 
