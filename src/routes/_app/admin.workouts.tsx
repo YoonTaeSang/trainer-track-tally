@@ -230,6 +230,14 @@ function AdminWorkouts() {
                 <p className="text-xs text-muted-foreground">운동을 추가하세요.</p>
               ) : (
                 <div className="space-y-2">
+                  {/* 헤더 라벨 — 각 입력과 같은 grid-cols-12 정렬 */}
+                  <div className="grid grid-cols-12 gap-2 items-center px-1 text-[11px] font-medium text-muted-foreground">
+                    <span className="col-span-4">운동</span>
+                    <span className="col-span-2">세트</span>
+                    <span className="col-span-2">kg</span>
+                    <span className="col-span-2">횟수</span>
+                    <span className="col-span-2" />
+                  </div>
                   {exercises.map((e, i) => (
                     <div key={e.id} className="grid grid-cols-12 gap-2 items-center">
                       <Input
