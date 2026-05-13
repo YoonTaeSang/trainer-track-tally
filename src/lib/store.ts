@@ -26,6 +26,8 @@ export type Member = {
   trainerId?: string | null;
   memo?: string;
   status: MemberStatus;
+  /** 대시보드 잔여 세션 알림에서 제외된 시각 (관리자가 X 클릭) */
+  dismissedAt?: string | null;
 };
 
 export type Schedule = {
@@ -107,6 +109,7 @@ const mapMember = {
     trainerId: r.trainer_id ?? null,
     memo: r.memo ?? "",
     status: (r.status ?? "active") as MemberStatus,
+    dismissedAt: r.dismissed_at ?? null,
   }),
   toRow: (m: Member) => ({
     id: m.id,
@@ -120,6 +123,7 @@ const mapMember = {
     trainer_id: m.trainerId ?? null,
     memo: m.memo ?? "",
     status: m.status ?? "active",
+    dismissed_at: m.dismissedAt ?? null,
   }),
 };
 

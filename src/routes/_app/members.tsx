@@ -103,7 +103,14 @@ function MembersPage() {
     }
     setMembers((prev) =>
       prev.map((m) =>
-        m.id === chargeFor.id ? { ...m, totalSessions: m.totalSessions + chargeAmount } : m
+        m.id === chargeFor.id
+          ? {
+              ...m,
+              totalSessions: m.totalSessions + chargeAmount,
+              // 충전 시 대시보드 알림 제외 상태를 자동으로 풀어줌
+              dismissedAt: null,
+            }
+          : m
       )
     );
     toast.success(`${chargeFor.name} 회원에게 ${chargeAmount}회 충전되었습니다.`);
@@ -228,6 +235,11 @@ function MembersPage() {
             {m.name}
           </Link>
           {isInactive && <Badge variant="outline" className="ml-2 text-[10px]">비활성</Badge>}
+          {m.dismissedAt && !isInactive && (
+            <Badge variant="secondary" className="ml-2 text-[10px]" title={`알림 제외 시각: ${new Date(m.dismissedAt).toLocaleString("ko-KR")}`}>
+              알림 제외됨
+            </Badge>
+          )}
         </TableCell>
         <TableCell>{m.phone}</TableCell>
         <TableCell>{m.joinedAt}</TableCell>
