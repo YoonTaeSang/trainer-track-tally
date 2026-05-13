@@ -284,6 +284,7 @@ function MySchedulePage() {
       //   2) 가용 시간(availability)이 없는 슬롯에 한해 specific_date row 추가
       const nonBooked = indices.filter((i) => getSlotStatus(date, i) !== "booked");
       const wd = new Date(`${date}T00:00:00`).getDay();
+      console.log("[applyAction add] start", { date, indices, nonBooked, wd, trainerId });
 
       // 1) time_off 제거 대상 수집
       const offIds = new Set<string>();
@@ -308,12 +309,16 @@ function MySchedulePage() {
         );
         if (wholeOff) offIds.add(wholeOff.id);
       }
+      console.log("[applyAction add] offIds to delete", Array.from(offIds));
       if (offIds.size > 0) {
         const { error } = await (supabase as any)
           .from("trainer_time_off")
           .delete()
           .in("id", Array.from(offIds));
-        if (error) return toast.error(error.message);
+        if (error) {
+          console.error("[applyAction add] delete time_off error", error);
+          return toast.error(error.message);
+        }
       }
 
       // 2) 이미 가용 시간으로 커버되는 슬롯은 새 row 불필요. 나머지만 upsert.
@@ -330,6 +335,7 @@ function MySchedulePage() {
         return !hasAvail;
       });
       const ranges = mergeIdxRanges(targets);
+      console.log("[applyAction add] availability upsert ranges", ranges);
       if (ranges.length > 0) {
         const rows = ranges.map((r) => ({
           trainer_id: trainerId,
@@ -338,10 +344,18 @@ function MySchedulePage() {
           end_time: r.end,
           specific_date: date,
         }));
-        const { error } = await (supabase as any)
+        console.log("[applyAction add] upsert rows", rows);
+        const { data, error } = await (supabase as any)
           .from("trainer_availability")
-          .upsert(rows, { onConflict: "trainer_id,weekday,start_time,specific_date" });
-        if (error) return toast.error(error.message);
+          .upsert(rows, { onConflict: "trainer_id,weekday,start_time,specific_date" })
+          .select();
+        if (error) {
+          console.error("[applyAction add] upsert error", error);
+          return toast.error(`가능 설정 실패: ${error.message}`);
+        }
+        console.log("[applyAction add] upsert success", data);
+      } else {
+        console.log("[applyAction add] no rows to upsert (all already available)");
       }
     } else if (action === "block") {
       // 선택된 모든 비-booked, 비-off 슬롯을 예약 불가로 변경
