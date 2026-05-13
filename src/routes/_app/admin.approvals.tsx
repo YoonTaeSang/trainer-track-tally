@@ -74,8 +74,8 @@ function ApprovalsPage() {
         .insert({ user_id: member.userId, role });
       if (insErr) throw insErr;
 
-      // If trainer, ensure a trainers row exists for this user.
       if (role === "trainer") {
+        // trainers 테이블에 row 추가 (없을 경우)
         const { data: existing } = await supabase
           .from("trainers")
           .select("id")
@@ -88,11 +88,14 @@ function ApprovalsPage() {
             phone: member.phone,
           });
         }
+        // 트레이너는 회원 목록에서 제거
+        setMembers((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        // 회원으로 승인: status를 active로 변경
+        setMembers((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, status: "active" } : m))
+        );
       }
-
-      setMembers((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status: "active" } : m))
-      );
       refetchAllTables();
       toast.success(
         role === "trainer" ? "트레이너로 승인되었습니다." : "회원으로 승인되었습니다."
