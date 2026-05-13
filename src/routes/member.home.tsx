@@ -74,9 +74,14 @@ function MemberHome() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "schedules" },
-        () => refetchAllTables()
+        (payload) => {
+          console.log("[home_schedules] postgres_changes event", payload);
+          refetchAllTables();
+        }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log("[home_schedules] subscribe status:", status, err ?? "");
+      });
 
     return () => {
       supabase.removeChannel(ch);
