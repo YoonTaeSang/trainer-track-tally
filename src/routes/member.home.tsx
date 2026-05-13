@@ -67,21 +67,16 @@ function MemberHome() {
       )
       .subscribe();
 
-    // schedules 변경(서명 요청 등)을 회원 user_id 기준으로 직접 감지하기 어려우니
-    // members.user_id 매칭으로 필터링된 채널을 별도로 운영
+    // schedules 변경(서명 요청 등) 실시간 반영용 전용 채널
+    // (channel 이름에 user.id를 포함해 realtime topic RLS 통과)
     const schedCh = supabase
       .channel(`home_schedules:${user.id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "schedules" },
-        (payload) => {
-          console.log("[home_schedules] postgres_changes event", payload);
-          refetchAllTables();
-        }
+        () => refetchAllTables()
       )
-      .subscribe((status, err) => {
-        console.log("[home_schedules] subscribe status:", status, err ?? "");
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(ch);
@@ -165,11 +160,6 @@ function MemberHome() {
 
   const greetingName = profileName || myMember?.name || "회원";
 
-  // ===== 임시 디버그 정보 (서명 요청 표시 안 되는 문제 파악용) =====
-  const dbgSigRequested = schedules.filter((s) => s.signatureRequested);
-  const dbgMine = myMember ? schedules.filter((s) => s.memberId === myMember.id) : [];
-  const dbgMineRequested = dbgMine.filter((s) => s.signatureRequested && !s.signatureUrl);
-
   return (
     <div className="space-y-4">
       <div>
@@ -178,54 +168,6 @@ function MemberHome() {
         </h1>
         <p className="text-xs text-muted-foreground">오늘도 운동 화이팅!</p>
       </div>
-
-      {/* TEMP DEBUG */}
-      <Card className="border-dashed border-amber-500/50 bg-amber-50 text-[11px]">
-        <CardContent className="space-y-1 pt-3">
-          <p className="font-semibold text-amber-700">🔧 디버그</p>
-          <p>user.id: <code className="text-[10px]">{user?.id ?? "(null)"}</code></p>
-          <p>profileName: <code>{profileName || "(빈값)"}</code></p>
-          <p>members 개수: <b>{members.length}</b></p>
-          <p>
-            myMember:{" "}
-            {myMember ? (
-              <code className="text-[10px]">
-                id={myMember.id.slice(0, 8)} userId={(myMember.userId ?? "null").toString().slice(0, 8)} name={myMember.name}
-              </code>
-            ) : (
-              <b className="text-destructive">null ← 문제!</b>
-            )}
-          </p>
-          <p>schedules 전체: <b>{schedules.length}</b></p>
-          <p>signatureRequested=true 전체: <b>{dbgSigRequested.length}</b></p>
-          <p>내 schedules: <b>{dbgMine.length}</b></p>
-          <p>
-            내 + 서명요청 + 미서명:{" "}
-            <b className={dbgMineRequested.length > 0 ? "text-emerald-600" : "text-destructive"}>
-              {dbgMineRequested.length}
-            </b>
-          </p>
-          {dbgSigRequested.length > 0 && (
-            <details className="mt-2">
-              <summary className="cursor-pointer">서명요청된 schedules 상세 (전체)</summary>
-              <pre className="mt-1 max-h-48 overflow-auto rounded bg-white p-2 text-[10px]">
-                {JSON.stringify(
-                  dbgSigRequested.map((s) => ({
-                    id: s.id.slice(0, 8),
-                    memberId: s.memberId.slice(0, 8),
-                    date: s.date,
-                    time: s.time,
-                    sigReq: s.signatureRequested,
-                    sigUrl: s.signatureUrl ? "있음" : "없음",
-                  })),
-                  null,
-                  2
-                )}
-              </pre>
-            </details>
-          )}
-        </CardContent>
-      </Card>
 
       <Card className="overflow-hidden">
         <div className="bg-gradient-to-br from-primary to-primary/70 px-5 py-4 text-primary-foreground">
