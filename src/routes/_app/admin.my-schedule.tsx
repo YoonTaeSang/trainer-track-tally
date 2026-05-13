@@ -37,9 +37,37 @@ export const Route = createFileRoute("/_app/admin/my-schedule")({
   head: () => ({ meta: [{ title: "내 스케줄 설정 | PT Studio" }] }),
 });
 
-// 시간 슬롯 06:00 ~ 22:00 (1시간 단위)
-const SLOT_HOURS = Array.from({ length: 16 }, (_, i) => 6 + i); // [6..21]
-const hourToStr = (h: number) => `${String(h).padStart(2, "0")}:00`;
+// 시간 슬롯 06:00 ~ 22:00, 10분 단위 (총 96 슬롯)
+const HOURS = Array.from({ length: 16 }, (_, i) => 6 + i); // [6..21]
+const SLOTS_PER_HOUR = 6; // 10분 단위
+const TOTAL_SLOTS = HOURS.length * SLOTS_PER_HOUR;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const idxToHour = (idx: number) => 6 + Math.floor(idx / SLOTS_PER_HOUR);
+const idxToMin = (idx: number) => (idx % SLOTS_PER_HOUR) * 10;
+const idxToTime = (idx: number) => `${pad2(idxToHour(idx))}:${pad2(idxToMin(idx))}`;
+const idxToEndTime = (idx: number) => {
+  const h = idxToHour(idx);
+  const m = idxToMin(idx) + 10;
+  return m === 60 ? `${pad2(h + 1)}:00` : `${pad2(h)}:${pad2(m)}`;
+};
+// 연속된 슬롯 인덱스 배열을 시작/종료 시간 범위로 병합
+function mergeIdxRanges(indices: number[]): Array<{ start: string; end: string }> {
+  if (indices.length === 0) return [];
+  const sorted = [...indices].sort((a, b) => a - b);
+  const out: Array<{ start: string; end: string }> = [];
+  let s = sorted[0];
+  let e = sorted[0];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === e + 1) {
+      e = sorted[i];
+    } else {
+      out.push({ start: idxToTime(s), end: idxToEndTime(e) });
+      s = e = sorted[i];
+    }
+  }
+  out.push({ start: idxToTime(s), end: idxToEndTime(e) });
+  return out;
+}
 
 type SlotStatus = "booked" | "off" | "available" | "none";
 
@@ -65,10 +93,10 @@ function MySchedulePage() {
   const [calMonth, setCalMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<string | null>(toDateStr(new Date()));
 
-  // 슬롯 드래그 선택
+  // 슬롯 드래그 선택 (인덱스 0..95)
   const [dragging, setDragging] = useState<{
-    startHour: number;
-    endHour: number;
+    startIdx: number;
+    endIdx: number;
     action: "add" | "block" | "delete-off";
   } | null>(null);
 
@@ -120,24 +148,21 @@ function MySchedulePage() {
     return map;
   }, [allSchedules, myMemberIds, trainerId]);
 
-  // 특정 슬롯의 상태 판정
+  // 특정 10분 슬롯(idx 0..95)의 상태 판정
+  // 수업이 있는 시간은 1시간 통째로 booked 처리 (그 시간대 6슬롯 모두 booked)
   const getSlotStatus = useCallback(
-    (date: string, hour: number): SlotStatus => {
-      const slotStart = hourToStr(hour);
-      const slotEndH = hour + 1;
-      const slotEnd = hourToStr(slotEndH);
+    (date: string, idx: number): SlotStatus => {
+      const hour = idxToHour(idx);
+      const slotStart = idxToTime(idx);
+      const slotEnd = idxToEndTime(idx);
 
-      // booked
-      const booked = mySchedulesByDateAndHour.get(date)?.get(hour);
-      if (booked) return "booked";
+      if (mySchedulesByDateAndHour.get(date)?.get(hour)) return "booked";
 
-      // whole-day off
       const wholeOff = timeOff.find(
         (t) => t.trainer_id === trainerId && t.date === date && !t.start_time && !t.end_time
       );
       if (wholeOff) return "off";
 
-      // slot-level off (any overlap on this hour)
       const slotOff = timeOff.find(
         (t) =>
           t.trainer_id === trainerId &&
@@ -149,7 +174,6 @@ function MySchedulePage() {
       );
       if (slotOff) return "off";
 
-      // availability (recurring weekly or specific_date)
       const wd = new Date(`${date}T00:00:00`).getDay();
       const hasAvail = availability.some(
         (a) =>
@@ -214,55 +238,48 @@ function MySchedulePage() {
     load();
   };
 
-  // ---- 슬롯 클릭/드래그 액션 적용 ----
-  const applyRangeAction = async (
+  // ---- 슬롯 클릭/드래그 액션 적용 (10분 슬롯 + 연속 슬롯 자동 병합 저장) ----
+  const applyAction = async (
     date: string,
-    startH: number,
-    endH: number,
+    indices: number[],
     action: "add" | "block" | "delete-off"
   ) => {
     if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
+
     if (action === "add") {
-      // 같은 슬롯이 이미 가능 상태면 추가하지 않음
-      const rows: any[] = [];
-      for (let h = startH; h <= endH; h++) {
-        if (getSlotStatus(date, h) !== "none") continue;
-        rows.push({
-          trainer_id: trainerId,
-          weekday: new Date(`${date}T00:00:00`).getDay(),
-          start_time: hourToStr(h),
-          end_time: hourToStr(h + 1),
-          specific_date: date,
-        });
-      }
-      if (rows.length === 0) return;
+      const targets = indices.filter((i) => getSlotStatus(date, i) === "none");
+      const ranges = mergeIdxRanges(targets);
+      if (ranges.length === 0) return;
+      const wd = new Date(`${date}T00:00:00`).getDay();
+      const rows = ranges.map((r) => ({
+        trainer_id: trainerId,
+        weekday: wd,
+        start_time: r.start,
+        end_time: r.end,
+        specific_date: date,
+      }));
       const { error } = await (supabase as any).from("trainer_availability").insert(rows);
       if (error) return toast.error(error.message);
     } else if (action === "block") {
-      // 가능 슬롯에 슬롯 단위 time-off 추가 (해당 날짜 specific_date 가용 row가 있으면 우선 정리)
-      // 단순화를 위해 그냥 timeOff insert로 슬롯을 덮어쓴다
-      const rows: any[] = [];
-      for (let h = startH; h <= endH; h++) {
-        if (getSlotStatus(date, h) !== "available") continue;
-        rows.push({
-          trainer_id: trainerId,
-          date,
-          reason: "",
-          start_time: hourToStr(h),
-          end_time: hourToStr(h + 1),
-        });
-      }
-      if (rows.length === 0) return;
+      const targets = indices.filter((i) => getSlotStatus(date, i) === "available");
+      const ranges = mergeIdxRanges(targets);
+      if (ranges.length === 0) return;
+      const rows = ranges.map((r) => ({
+        trainer_id: trainerId,
+        date,
+        reason: "",
+        start_time: r.start,
+        end_time: r.end,
+      }));
       const { error } = await (supabase as any).from("trainer_time_off").insert(rows);
       if (error) return toast.error(error.message);
     } else if (action === "delete-off") {
-      // 슬롯을 덮는 time_off 항목 삭제
-      const ids = new Set<string>();
-      for (let h = startH; h <= endH; h++) {
-        if (getSlotStatus(date, h) !== "off") continue;
-        const slotStart = hourToStr(h);
-        const slotEnd = hourToStr(h + 1);
-        // slot-level off 우선
+      const offIds = new Set<string>();
+      const availIds = new Set<string>();
+      for (const i of indices) {
+        if (getSlotStatus(date, i) !== "off") continue;
+        const slotStart = idxToTime(i);
+        const slotEnd = idxToEndTime(i);
         const slotOff = timeOff.find(
           (t) =>
             t.trainer_id === trainerId &&
@@ -273,20 +290,18 @@ function MySchedulePage() {
             (t.end_time as string) > slotStart
         );
         if (slotOff) {
-          ids.add(slotOff.id);
+          offIds.add(slotOff.id);
           continue;
         }
-        // whole-day off
         const wholeOff = timeOff.find(
           (t) => t.trainer_id === trainerId && t.date === date && !t.start_time && !t.end_time
         );
-        if (wholeOff) ids.add(wholeOff.id);
+        if (wholeOff) offIds.add(wholeOff.id);
       }
-      // 같은 날짜의 specific_date 가용 슬롯도 함께 정리 (사용자가 한 번 추가한 뒤 되돌리기 위해)
-      const availIds = new Set<string>();
-      for (let h = startH; h <= endH; h++) {
-        const slotStart = hourToStr(h);
-        const slotEnd = hourToStr(h + 1);
+      // 해제 시 specific_date 가용 row도 함께 제거 → 진짜 "미설정"으로 복귀
+      for (const i of indices) {
+        const slotStart = idxToTime(i);
+        const slotEnd = idxToEndTime(i);
         const ap = availability.find(
           (a) =>
             a.trainer_id === trainerId &&
@@ -296,11 +311,11 @@ function MySchedulePage() {
         );
         if (ap) availIds.add(ap.id);
       }
-      if (ids.size > 0) {
+      if (offIds.size > 0) {
         const { error } = await (supabase as any)
           .from("trainer_time_off")
           .delete()
-          .in("id", Array.from(ids));
+          .in("id", Array.from(offIds));
         if (error) return toast.error(error.message);
       }
       if (availIds.size > 0) {
@@ -314,34 +329,36 @@ function MySchedulePage() {
     load();
   };
 
-  const handleSlotMouseDown = (hour: number) => {
+  const handleSlotMouseDown = (idx: number) => {
     if (!selectedDate) return;
-    const status = getSlotStatus(selectedDate, hour);
+    const status = getSlotStatus(selectedDate, idx);
     if (status === "booked") return;
     const action: "add" | "block" | "delete-off" =
       status === "none" ? "add" : status === "available" ? "block" : "delete-off";
-    setDragging({ startHour: hour, endHour: hour, action });
+    setDragging({ startIdx: idx, endIdx: idx, action });
   };
 
-  const handleSlotMouseEnter = (hour: number) => {
+  const handleSlotMouseEnter = (idx: number) => {
     if (!dragging) return;
-    setDragging((d) => (d ? { ...d, endHour: hour } : null));
+    setDragging((d) => (d ? { ...d, endIdx: idx } : null));
   };
 
   const handleSlotMouseUp = async () => {
     if (!dragging || !selectedDate) return;
-    const s = Math.min(dragging.startHour, dragging.endHour);
-    const e = Math.max(dragging.startHour, dragging.endHour);
+    const s = Math.min(dragging.startIdx, dragging.endIdx);
+    const e = Math.max(dragging.startIdx, dragging.endIdx);
     const action = dragging.action;
+    const indices: number[] = [];
+    for (let i = s; i <= e; i++) indices.push(i);
     setDragging(null);
-    await applyRangeAction(selectedDate, s, e, action);
+    await applyAction(selectedDate, indices, action);
   };
 
-  const isInDragRange = (hour: number) => {
+  const isInDragRange = (idx: number) => {
     if (!dragging) return false;
-    const s = Math.min(dragging.startHour, dragging.endHour);
-    const e = Math.max(dragging.startHour, dragging.endHour);
-    return hour >= s && hour <= e;
+    const s = Math.min(dragging.startIdx, dragging.endIdx);
+    const e = Math.max(dragging.startIdx, dragging.endIdx);
+    return idx >= s && idx <= e;
   };
 
   // ---- 달력 ----
@@ -603,54 +620,72 @@ function MySchedulePage() {
             })}
           </div>
 
-          {/* 선택한 날짜의 시간대 그리드 */}
+          {/* 선택한 날짜의 시간대 그리드 (10분 단위) */}
           {selectedDate && (
             <div className="mt-5 border-t pt-4">
               <p className="mb-2 text-sm font-medium">
                 {selectedDate} ({WEEK_LABELS[new Date(`${selectedDate}T00:00:00`).getDay()]}) 시간대
               </p>
-              <p className="mb-3 text-[11px] text-muted-foreground">
-                슬롯을 클릭/드래그해 가능 시간 추가, 예약 불가 변경, 해제할 수 있습니다.
-              </p>
-              <div className="grid grid-cols-4 gap-1 sm:grid-cols-8" onMouseLeave={() => dragging && setDragging(null)}>
-                {SLOT_HOURS.map((h) => {
-                  const status = getSlotStatus(selectedDate, h);
-                  const booked = mySchedulesByDateAndHour.get(selectedDate)?.get(h);
+              <div className="mb-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block h-3 w-3 rounded border border-border bg-background" /> 클릭 → 가능
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block h-3 w-3 rounded border border-emerald-500/40 bg-emerald-500/15" /> 다시 클릭 → 예약 불가
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block h-3 w-3 rounded border border-rose-500/40 bg-rose-500/15" /> 한번 더 클릭 → 해제
+                </span>
+              </div>
+              <div className="space-y-1" onMouseLeave={() => dragging && setDragging(null)}>
+                {HOURS.map((hour) => {
+                  const booked = mySchedulesByDateAndHour.get(selectedDate)?.get(hour);
                   const member = booked ? allMembers.find((m) => m.id === booked.memberId) : null;
-                  const inDrag = isInDragRange(h);
+                  const baseIdx = (hour - 6) * SLOTS_PER_HOUR;
                   return (
-                    <button
-                      key={h}
-                      type="button"
-                      disabled={status === "booked"}
-                      onMouseDown={() => handleSlotMouseDown(h)}
-                      onMouseEnter={() => handleSlotMouseEnter(h)}
-                      onMouseUp={handleSlotMouseUp}
-                      className={cn(
-                        "flex min-h-14 flex-col items-center justify-center rounded-md border p-1 text-[11px] transition select-none",
-                        status === "available" && "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:brightness-95",
-                        status === "off" && "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300 hover:brightness-95",
-                        status === "booked" && "bg-muted text-muted-foreground cursor-not-allowed",
-                        status === "none" && "bg-background text-foreground hover:bg-accent",
-                        inDrag && "ring-2 ring-primary"
+                    <div key={hour} className="flex items-center gap-2">
+                      <div className="w-14 shrink-0 text-xs font-medium text-muted-foreground">
+                        {pad2(hour)}:00
+                      </div>
+                      {booked ? (
+                        <div className="flex h-8 flex-1 items-center justify-center rounded-md border bg-muted px-2 text-xs text-muted-foreground">
+                          {member?.name ?? "(회원)"}
+                        </div>
+                      ) : (
+                        <div className="flex flex-1 gap-px">
+                          {Array.from({ length: SLOTS_PER_HOUR }).map((_, m) => {
+                            const idx = baseIdx + m;
+                            const status = getSlotStatus(selectedDate, idx);
+                            const inDrag = isInDragRange(idx);
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                title={idxToTime(idx)}
+                                onMouseDown={() => handleSlotMouseDown(idx)}
+                                onMouseEnter={() => handleSlotMouseEnter(idx)}
+                                onMouseUp={handleSlotMouseUp}
+                                className={cn(
+                                  "h-8 flex-1 border transition select-none first:rounded-l-md last:rounded-r-md",
+                                  status === "available" &&
+                                    "border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25",
+                                  status === "off" &&
+                                    "border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25",
+                                  status === "none" &&
+                                    "border-border bg-background hover:bg-accent",
+                                  inDrag && "ring-2 ring-primary"
+                                )}
+                              />
+                            );
+                          })}
+                        </div>
                       )}
-                    >
-                      <span className="font-semibold">{hourToStr(h)}</span>
-                      {status === "booked" && member && (
-                        <span className="mt-0.5 max-w-full truncate text-[9px] leading-tight">{member.name}</span>
-                      )}
-                      {status === "available" && (
-                        <span className="mt-0.5 text-[9px] leading-tight">가능</span>
-                      )}
-                      {status === "off" && (
-                        <span className="mt-0.5 text-[9px] leading-tight">예약 불가</span>
-                      )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
-              <p className="mt-3 text-[11px] text-muted-foreground">
-                흰색 슬롯 클릭 → 가능 시간 추가 · 가능 슬롯 클릭 → 예약 불가 · 예약 불가 슬롯 클릭 → 해제
+              <p className="mt-3 text-[10px] text-muted-foreground">
+                슬롯에 마우스를 올리면 시간 툴팁이 표시되며, 드래그로 여러 슬롯을 한 번에 선택할 수 있습니다.
               </p>
             </div>
           )}
