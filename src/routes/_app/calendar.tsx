@@ -12,7 +12,7 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -33,7 +43,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useMembers, useSchedules, uid } from "@/lib/store";
+import { useMembers, useSchedules, uid, type Schedule } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
 import { MonthTimeline } from "@/components/month-timeline";
@@ -71,6 +81,16 @@ function CalendarPage() {
   const [open, setOpen] = useState(false);
   const [memberId, setMemberId] = useState("");
   const [time, setTime] = useState("10:00");
+  const [editing, setEditing] = useState<Schedule | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const canManage = (s: Schedule) => {
+    if (isAdmin) return true;
+    if (isTrainer) {
+      return !!currentTrainerId && visibleMemberIds.has(s.memberId);
+    }
+    return false;
+  };
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
@@ -92,26 +112,103 @@ function CalendarPage() {
     ? (byDate.get(format(selected, "yyyy-MM-dd")) ?? []).sort((a, b) => a.time.localeCompare(b.time))
     : [];
 
-  const addSchedule = () => {
-    if (!selected || !memberId) {
+  const openAdd = () => {
+    setEditing(null);
+    setMemberId("");
+    setTime("10:00");
+    setOpen(true);
+  };
+
+  const openEdit = (s: Schedule) => {
+    if (!canManage(s)) return;
+    setEditing(s);
+    setMemberId(s.memberId);
+    setTime(s.time);
+    setOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!memberId) {
       toast.error("회원을 선택해주세요.");
       return;
     }
-    const dateStr = format(selected, "yyyy-MM-dd");
-    setSchedules((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        memberId,
-        date: dateStr,
-        time,
-        attended: null,
-      },
-    ]);
-    import("@/lib/availability").then((m) => m.notifyMemberOfSchedule(memberId, dateStr, time));
-    toast.success("일정이 추가되었습니다.");
+    if (editing) {
+      // 수정
+      setSchedules((prev) =>
+        prev.map((x) => (x.id === editing.id ? { ...x, memberId, time } : x))
+      );
+      toast.success("일정이 수정되었습니다.");
+    } else {
+      // 추가
+      if (!selected) {
+        toast.error("날짜를 선택해주세요.");
+        return;
+      }
+      const dateStr = format(selected, "yyyy-MM-dd");
+      setSchedules((prev) => [
+        ...prev,
+        { id: uid(), memberId, date: dateStr, time, attended: null },
+      ]);
+      import("@/lib/availability").then((m) => m.notifyMemberOfSchedule(memberId, dateStr, time));
+      toast.success("일정이 추가되었습니다.");
+    }
     setOpen(false);
+    setEditing(null);
     setMemberId("");
+  };
+
+  const deleteSchedule = () => {
+    if (!deletingId) return;
+    const target = allSchedules.find((s) => s.id === deletingId);
+    if (target && !canManage(target)) {
+      toast.error("삭제 권한이 없습니다.");
+      setDeletingId(null);
+      return;
+    }
+    setSchedules((prev) => prev.filter((s) => s.id !== deletingId));
+    toast.success("일정이 삭제되었습니다.");
+    setDeletingId(null);
+  };
+
+  const renderScheduleItem = (s: Schedule) => {
+    const m = members.find((x) => x.id === s.memberId);
+    const manage = canManage(s);
+    return (
+      <li key={s.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{m?.name ?? "(삭제됨)"}</p>
+          <p className="text-xs text-muted-foreground">{s.time}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-xs",
+              s.attended === true && "bg-primary/10 text-primary",
+              s.attended === false && "bg-destructive/10 text-destructive",
+              s.attended === null && "bg-muted text-muted-foreground"
+            )}
+          >
+            {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
+          </span>
+          {manage && (
+            <>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s)} title="수정">
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                onClick={() => setDeletingId(s.id)}
+                title="삭제"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+        </div>
+      </li>
+    );
   };
 
   const showMonthTimeline = isAdmin || isTrainer;
@@ -132,36 +229,14 @@ function CalendarPage() {
                 <h3 className="font-semibold">
                   {selected ? format(selected, "M월 d일") : "날짜 선택"}
                 </h3>
-                <Button size="sm" onClick={() => setOpen(true)} disabled={!selected}>
+                <Button size="sm" onClick={openAdd} disabled={!selected}>
                   <Plus className="mr-1 h-4 w-4" /> 추가
                 </Button>
               </div>
               {selectedSchedules.length === 0 ? (
                 <p className="text-sm text-muted-foreground">일정이 없습니다.</p>
               ) : (
-                <ul className="space-y-2">
-                  {selectedSchedules.map((s) => {
-                    const m = members.find((x) => x.id === s.memberId);
-                    return (
-                      <li key={s.id} className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                          <p className="font-medium">{m?.name ?? "(삭제됨)"}</p>
-                          <p className="text-xs text-muted-foreground">{s.time}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-xs",
-                            s.attended === true && "bg-primary/10 text-primary",
-                            s.attended === false && "bg-destructive/10 text-destructive",
-                            s.attended === null && "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          {s.attended === true ? "출석" : s.attended === false ? "결석" : "예정"}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <ul className="space-y-2">{selectedSchedules.map(renderScheduleItem)}</ul>
               )}
             </CardContent>
           </Card>
@@ -266,17 +341,27 @@ function CalendarPage() {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={() => setOpen(true)}>
+            <Button onClick={openAdd}>
               <Plus className="mr-1 h-4 w-4" /> 일정 추가
             </Button>
           </div>
         </>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditing(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>일정 추가 ({selected && format(selected, "yyyy-MM-dd")})</DialogTitle>
+            <DialogTitle>
+              {editing
+                ? `일정 수정 (${editing.date})`
+                : `일정 추가 (${selected && format(selected, "yyyy-MM-dd")})`}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2">
             <div className="grid gap-2">
@@ -299,10 +384,31 @@ function CalendarPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>취소</Button>
-            <Button onClick={addSchedule}>저장</Button>
+            <Button onClick={handleSave}>저장</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(v) => !v && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>일정 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 일정을 삭제하시겠습니까? 출석으로 처리된 일정은 세션 차감이 되돌아가지 않으니
+              필요 시 회원 세션 수를 별도로 조정해주세요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteSchedule}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
