@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -35,7 +35,6 @@ import { cn } from "@/lib/utils";
 import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
-import { fetchAvailability, fetchTimeOff, slotsFor, type Availability, type TimeOff } from "@/lib/availability";
 
 // Distinct, accessible HSL palette for trainer color coding.
 const TRAINER_PALETTE = [
@@ -70,8 +69,6 @@ export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) =>
   const [overlapOpen, setOverlapOpen] = useState(false);
   const [editing, setEditing] = useState<Schedule | null>(null);
   const [editTime, setEditTime] = useState("10:00");
-  const [availability, setAvailability] = useState<Availability[]>([]);
-  const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
 
   const memberById = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const trainerColor = useMemo(() => {
@@ -102,17 +99,6 @@ export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) =>
     });
     return map;
   }, [schedules]);
-
-  const hasAvailabilityByDate = useMemo(() => {
-    if (!isTrainer || !currentTrainerId) return new Map<string, boolean>();
-    const map = new Map<string, boolean>();
-    days.forEach((d) => {
-      const key = format(d, "yyyy-MM-dd");
-      const slots = slotsFor(currentTrainerId, key, availability, timeOff);
-      map.set(key, slots.length > 0);
-    });
-    return map;
-  }, [isTrainer, currentTrainerId, days, availability, timeOff]);
 
   // Returns overlap groups (>= threshold at same time) for a date.
   const overlapGroupsFor = (key: string) => {
@@ -149,16 +135,6 @@ export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) =>
     const m = memberById.get(s.memberId);
     return m?.trainerId === currentTrainerId;
   };
-
-  useEffect(() => {
-    if (!isTrainer || !currentTrainerId) return;
-    Promise.all([fetchAvailability(currentTrainerId), fetchTimeOff(currentTrainerId)])
-      .then(([a, t]) => {
-        setAvailability(a);
-        setTimeOff(t);
-      })
-      .catch((e) => console.error("Failed to fetch trainer availability:", e));
-  }, [isTrainer, currentTrainerId]);
 
   const handleDelete = (s: Schedule) => {
     if (!canEdit(s)) {
@@ -243,7 +219,6 @@ export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) =>
             const isToday = isSameDay(d, new Date());
             const overlapGroups = overlapGroupsFor(key);
             const hasOverlap = overlapGroups.length > 0;
-            const hasAvail = hasAvailabilityByDate.get(key) ?? true;
             return (
               <button
                 key={key}
@@ -251,7 +226,6 @@ export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) =>
                 className={cn(
                   "flex min-h-[88px] flex-col gap-1 rounded-md border p-1.5 text-left text-xs transition-colors",
                   inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
-                  !hasAvail && isTrainer && "bg-muted text-muted-foreground opacity-50",
                   isSel && "border-primary ring-1 ring-primary",
                   !isSel && "hover:bg-accent"
                 )}
