@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -13,11 +12,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, Clock, Info } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Clock, Info } from "lucide-react";
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import {
   fetchAvailability,
   fetchTimeOff,
@@ -61,6 +72,7 @@ function MyScheduleMemberPage() {
   const [reqDate, setReqDate] = useState<string>(toDateStr(new Date()));
   const [reqTime, setReqTime] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [dlgMonth, setDlgMonth] = useState<Date>(() => startOfMonth(new Date()));
 
   useEffect(() => {
     if (!user) return;
@@ -167,7 +179,29 @@ function MyScheduleMemberPage() {
     setChanging(s);
     setReqDate(s.date);
     setReqTime(null);
+    setDlgMonth(startOfMonth(new Date(`${s.date}T00:00:00`)));
   };
+
+  // Build day-level availability map for the change-request dialog calendar.
+  const dlgDays = useMemo(() => {
+    const first = startOfMonth(dlgMonth);
+    const last = endOfMonth(dlgMonth);
+    return eachDayOfInterval({
+      start: startOfWeek(first, { weekStartsOn: 0 }),
+      end: endOfWeek(last, { weekStartsOn: 0 }),
+    });
+  }, [dlgMonth]);
+
+  const dlgStatusFor = (d: Date): "off" | "available" | "none" => {
+    if (!myTrainer) return "none";
+    const ds = toDateStr(d);
+    if (timeOff.some((t) => t.trainer_id === myTrainer.id && t.date === ds)) return "off";
+    const slots = slotsFor(myTrainer.id, ds, availability, timeOff);
+    if (slots.length > 0) return "available";
+    return "none";
+  };
+
+  const todayStrForCal = toDateStr(new Date());
 
   const submitChange = async () => {
     if (!changing || !user || !myMember || !reqTime) {
@@ -322,19 +356,86 @@ function MyScheduleMemberPage() {
                 기존: {changing.date} {changing.time}
               </p>
               <div>
-                <Label className="text-xs">새 날짜</Label>
-                <Input
-                  type="date"
-                  value={reqDate}
-                  min={toDateStr(new Date())}
-                  onChange={(e) => {
-                    setReqDate(e.target.value);
-                    setReqTime(null);
-                  }}
-                />
+                <div className="mb-1.5 flex items-center justify-between">
+                  <Label className="text-xs">새 날짜</Label>
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => setDlgMonth((m) => addMonths(m, -1))}
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className="px-1 text-xs font-medium">
+                      {format(dlgMonth, "yyyy년 M월")}
+                    </span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => setDlgMonth((m) => addMonths(m, 1))}
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mb-1 grid grid-cols-7 gap-0.5">
+                  {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
+                    <div key={w} className="py-0.5 text-center text-[10px] font-medium text-muted-foreground">
+                      {w}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-0.5">
+                  {dlgDays.map((d) => {
+                    const ds = toDateStr(d);
+                    const status = dlgStatusFor(d);
+                    const inMonth = isSameMonth(d, dlgMonth);
+                    const isPast = ds < todayStrForCal;
+                    const isToday = isSameDay(d, new Date());
+                    const selected = reqDate === ds;
+                    const clickable = inMonth && !isPast && status === "available";
+                    return (
+                      <button
+                        type="button"
+                        key={ds}
+                        disabled={!clickable}
+                        onClick={() => {
+                          setReqDate(ds);
+                          setReqTime(null);
+                        }}
+                        className={cn(
+                          "relative flex aspect-square flex-col items-center justify-center rounded-md border text-[11px] transition",
+                          !inMonth && "opacity-30",
+                          isPast && "opacity-40",
+                          selected && "ring-2 ring-primary ring-offset-1",
+                          status === "available" && "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+                          status === "off" && "border-rose-500/40 bg-rose-500/15 text-rose-700 dark:text-rose-300",
+                          status === "none" && "border-border bg-background text-muted-foreground",
+                          clickable && "cursor-pointer hover:brightness-95",
+                          !clickable && "cursor-not-allowed"
+                        )}
+                      >
+                        <span className={cn("font-medium", isToday && "underline")}>{format(d, "d")}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="inline-block h-2.5 w-2.5 rounded border border-emerald-500/40 bg-emerald-500/15" /> 가능
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="inline-block h-2.5 w-2.5 rounded border border-rose-500/40 bg-rose-500/15" /> 휴무
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="inline-block h-2.5 w-2.5 rounded border bg-background" /> 미설정
+                  </span>
+                </div>
               </div>
               <div>
-                <Label className="text-xs">새 시간</Label>
+                <Label className="text-xs">새 시간 ({reqDate})</Label>
                 {candidateSlots.length === 0 ? (
                   <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                     이 날에는 트레이너 가능 시간이 없습니다 (휴무 또는 미설정).
