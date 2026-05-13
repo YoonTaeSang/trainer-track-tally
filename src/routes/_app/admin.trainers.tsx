@@ -126,7 +126,12 @@ function TrainersPage() {
   };
 
   const convertToMember = async () => {
-    if (!convertFor?.userId) return;
+    if (!convertFor) return;
+    if (!convertFor.userId) {
+      toast.error("이 트레이너는 사용자 계정과 연결되어 있지 않아 권한을 변경할 수 없습니다.");
+      setConvertFor(null);
+      return;
+    }
     setConverting(true);
     try {
       const { error: delErr } = await supabase
@@ -277,16 +282,14 @@ function TrainersPage() {
                         <Button size="icon" variant="ghost" onClick={(e) => openEdit(t, e)} title="수정">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        {t.userId && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={(e) => { e.stopPropagation(); setConvertFor(t); }}
-                            title="회원으로 전환"
-                          >
-                            <ArrowRightLeft className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => { e.stopPropagation(); setConvertFor(t); }}
+                          title="회원으로 전환"
+                        >
+                          <ArrowRightLeft className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={(e) => remove(t.id, e)} title="삭제">
                           <Trash2 className="h-4 w-4" />
                         </Button>

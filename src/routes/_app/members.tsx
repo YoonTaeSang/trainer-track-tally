@@ -260,7 +260,7 @@ function MembersPage() {
               <Pencil className="h-4 w-4" />
             </Button>
           )}
-          {isAdmin && m.userId && !isInactive && (
+          {isAdmin && !isInactive && (
             <Button size="icon" variant="ghost" onClick={() => setConvertFor(m)} title="트레이너로 전환">
               <ArrowRightLeft className="h-4 w-4" />
             </Button>
