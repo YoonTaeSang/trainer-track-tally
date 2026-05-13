@@ -337,41 +337,64 @@ export function useTableStatus(table: "trainers" | "members" | "schedules" | "wo
 /**
  * Public-safe trainer projection (id, name only) for member-facing routes.
  * Reads from the `trainers_public` view, which excludes phone/memo.
- * Use this anywhere a member context needs to display a trainer name.
+ * Uses the shared cache + ensureSubscription so the channel stays alive
+ * across page navigations and all components share the same data.
  */
+const mapPublicTrainer = {
+  fromRow: (r: any): Trainer => ({
+    id: r.id,
+    userId: r.user_id ?? null,
+    name: r.name ?? "",
+    phone: "",
+    memo: "",
+  }),
+  toRow: (t: Trainer) => ({ id: t.id, user_id: t.userId ?? null, name: t.name ?? "" }),
+};
+
 export function usePublicTrainers(): readonly [Trainer[]] {
-  const [data, setData] = useState<Trainer[]>([]);
+  const c = getCache<Trainer>("trainers_public");
+  const [data, setLocal] = useState<Trainer[]>(c.data);
+
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      const { data: rows, error } = await (supabase as any)
-        .from("trainers_public")
-        .select("id,user_id,name,created_at");
-      if (cancelled) return;
-      if (error) {
-        console.error("[store:trainers_public] error", error);
-        return;
-      }
-      setData(
-        (rows ?? []).map((r: any) => ({
-          id: r.id,
-          userId: r.user_id ?? null,
-          name: r.name ?? "",
-          phone: "",
-          memo: "",
-        }))
-      );
-    };
-    load();
-    const channel = supabase
-      .channel("store:trainers_public")
-      .on("postgres_changes", { event: "*", schema: "public", table: "trainers" }, () => load())
-      .subscribe();
+    const listener = (d: Trainer[]) => setLocal(d);
+    c.listeners.add(listener);
+    if (!c.loaded) {
+      // trainers_public view — load once; realtime via trainers table
+      (async () => {
+        const { data: rows, error } = await (supabase as any)
+          .from("trainers_public")
+          .select("id,user_id,name,created_at");
+        if (error) {
+          console.error("[store:trainers_public] error", error);
+          return;
+        }
+        c.data = (rows ?? []).map(mapPublicTrainer.fromRow);
+        c.loaded = true;
+        notify(c);
+      })();
+    } else {
+      setLocal(c.data);
+    }
+    // Subscribe to trainers table changes to keep the public view fresh
+    if (!c.channel) {
+      c.channel = supabase
+        .channel("store:trainers_public")
+        .on("postgres_changes", { event: "*", schema: "public", table: "trainers" }, async () => {
+          const { data: rows, error } = await (supabase as any)
+            .from("trainers_public")
+            .select("id,user_id,name,created_at");
+          if (error) return;
+          c.data = (rows ?? []).map(mapPublicTrainer.fromRow);
+          c.loaded = true;
+          notify(c);
+        })
+        .subscribe();
+    }
     return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
+      c.listeners.delete(listener);
     };
   }, []);
+
   return [data] as const;
 }
 export function useMembers() {
