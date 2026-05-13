@@ -48,13 +48,16 @@ function AdminWorkouts() {
   const { role } = useRole();
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isTrainer = role === "trainer";
-  const members = useMemo(
-    () =>
-      isTrainer && currentTrainerId
+  // 트레이너: 본인 담당 회원만 (currentTrainerId 미해결 시 빈 배열)
+  // 관리자/기타: 전체
+  const members = useMemo(() => {
+    if (isTrainer) {
+      return currentTrainerId
         ? allMembers.filter((m) => m.trainerId === currentTrainerId)
-        : allMembers,
-    [allMembers, isTrainer, currentTrainerId]
-  );
+        : [];
+    }
+    return allMembers;
+  }, [allMembers, isTrainer, currentTrainerId]);
   const myMemberIds = useMemo(() => new Set(members.map((m) => m.id)), [members]);
   const [memberFilter, setMemberFilter] = useState<string>("all");
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
@@ -149,7 +152,11 @@ function AdminWorkouts() {
         <CardContent>
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              세션이 없습니다.
+              {isTrainer
+                ? currentTrainerId
+                  ? "담당 회원의 세션이 없습니다."
+                  : "트레이너 계정이 아직 연결되지 않았습니다."
+                : "세션이 없습니다."}
             </p>
           ) : (
             <div className="space-y-2">

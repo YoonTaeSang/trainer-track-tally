@@ -202,7 +202,9 @@ function MembersPage() {
   };
 
   const filtered = members
-    .filter((m) => (isTrainer && currentTrainerId ? m.trainerId === currentTrainerId : true))
+    // 트레이너: 본인 담당 회원만. currentTrainerId 미해결 상태면 빈 결과.
+    // 관리자/기타: 전체 통과.
+    .filter((m) => !isTrainer || (!!currentTrainerId && m.trainerId === currentTrainerId))
     .filter((m) => (showInactive ? true : m.status !== "inactive"))
     .filter((m) => m.status !== "pending" && m.status !== "rejected")
     .filter((m) => m.name.includes(search) || m.phone.includes(search));
@@ -367,7 +369,11 @@ function MembersPage() {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-sm text-muted-foreground">
-                    등록된 회원이 없습니다.
+                    {isTrainer
+                      ? currentTrainerId
+                        ? "담당 회원이 아직 없습니다."
+                        : "트레이너 계정이 아직 연결되지 않았습니다."
+                      : "등록된 회원이 없습니다."}
                   </TableCell>
                 </TableRow>
               ) : isAdmin && groups ? (
