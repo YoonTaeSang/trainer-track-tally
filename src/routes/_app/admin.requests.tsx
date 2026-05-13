@@ -37,6 +37,7 @@ type Req = {
   requested_time: string | null;
   status: "pending" | "approved" | "rejected";
   reject_reason: string | null;
+  message: string | null;
   created_at: string;
 };
 
@@ -162,6 +163,11 @@ function RequestsPage() {
           {r.request_type === "change" && (
             <p className="text-xs text-primary">
               요청: {r.requested_date} {r.requested_time}
+            </p>
+          )}
+          {r.message && (
+            <p className="whitespace-pre-wrap rounded-md bg-muted/60 px-2 py-1 text-xs text-foreground">
+              메시지: {r.message}
             </p>
           )}
           <p className="text-[11px] text-muted-foreground">

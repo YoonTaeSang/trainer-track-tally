@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,7 @@ function MyScheduleMemberPage() {
   const [changing, setChanging] = useState<Schedule | null>(null);
   const [reqDate, setReqDate] = useState<string>(toDateStr(new Date()));
   const [reqTime, setReqTime] = useState<string | null>(null);
+  const [reqMessage, setReqMessage] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [dlgMonth, setDlgMonth] = useState<Date>(() => startOfMonth(new Date()));
 
@@ -136,12 +138,17 @@ function MyScheduleMemberPage() {
   // load trainer availability when changing dialog opens
   useEffect(() => {
     if (!changing || !myTrainer) return;
+    console.log("[booking] dialog open, trainer:", { id: myTrainer.id, name: myTrainer.name });
     Promise.all([fetchAvailability(myTrainer.id), fetchTimeOff(myTrainer.id)])
       .then(([a, t]) => {
+        console.log("[booking] availability rows:", a.length, "timeOff rows:", t.length);
         setAvailability(a);
         setTimeOff(t);
       })
-      .catch((e) => toast.error(e instanceof Error ? e.message : "가용 시간 조회 실패"));
+      .catch((e) => {
+        console.error("[booking] fetch availability/timeOff error:", e);
+        toast.error(e instanceof Error ? e.message : "가용 시간 조회 실패");
+      });
   }, [changing, myTrainer]);
 
   const myUpcomingSchedules = useMemo(() => {
@@ -185,6 +192,7 @@ function MyScheduleMemberPage() {
     setChanging(s);
     setReqDate(s.date);
     setReqTime(null);
+    setReqMessage("");
     setDlgMonth(startOfMonth(new Date(`${s.date}T00:00:00`)));
   };
 
@@ -217,6 +225,7 @@ function MyScheduleMemberPage() {
     setSubmitting(true);
     try {
       const trainerUserId = myTrainer?.userId ?? null;
+      const trimmedMessage = reqMessage.trim();
       const { error } = await supabase.from("schedule_requests").insert({
         member_user_id: user.id,
         trainer_user_id: trainerUserId,
@@ -228,18 +237,21 @@ function MyScheduleMemberPage() {
         request_type: "change",
         requested_date: reqDate,
         requested_time: reqTime,
+        message: trimmedMessage || null,
       });
       if (error) throw error;
       if (trainerUserId) {
+        const bodyBase = `${myMember.name} · ${changing.date} ${changing.time} → ${reqDate} ${reqTime}`;
         await supabase.from("notifications").insert({
           user_id: trainerUserId,
           type: "trainer_message",
           title: "변경 신청",
-          body: `${myMember.name} · ${changing.date} ${changing.time} → ${reqDate} ${reqTime}`,
+          body: trimmedMessage ? `${bodyBase}\n메시지: ${trimmedMessage}` : bodyBase,
         });
       }
       toast.success("변경 요청이 접수되었습니다. 트레이너 승인을 기다려주세요.");
       setChanging(null);
+      setReqMessage("");
       loadRequests();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "오류가 발생했습니다");
@@ -442,9 +454,13 @@ function MyScheduleMemberPage() {
               </div>
               <div>
                 <Label className="text-xs">새 시간 ({reqDate})</Label>
-                {candidateSlots.length === 0 ? (
+                {availability.length === 0 && timeOff.length === 0 ? (
+                  <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                    트레이너가 아직 가능 시간을 설정하지 않았습니다.
+                  </p>
+                ) : candidateSlots.length === 0 ? (
                   <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                    이 날에는 트레이너 가능 시간이 없습니다 (휴무 또는 미설정).
+                    이 날에는 트레이너 가능 시간이 없습니다 (예약 불가 또는 미설정).
                   </p>
                 ) : (
                   <div className="grid max-h-48 grid-cols-3 gap-1.5 overflow-y-auto p-0.5">
@@ -471,6 +487,20 @@ function MyScheduleMemberPage() {
                     })}
                   </div>
                 )}
+              </div>
+
+              <div>
+                <Label className="text-xs">트레이너에게 메시지 (선택)</Label>
+                <Textarea
+                  value={reqMessage}
+                  onChange={(e) => setReqMessage(e.target.value.slice(0, 200))}
+                  placeholder="변경 사유나 요청사항을 적어주세요"
+                  rows={3}
+                  className="mt-1 text-xs"
+                />
+                <p className="mt-1 text-right text-[10px] text-muted-foreground">
+                  {reqMessage.length}/200
+                </p>
               </div>
             </div>
           )}
