@@ -85,9 +85,15 @@ function MyScheduleMemberPage() {
   }, [user]);
 
   const myMember = useMemo(() => {
-    if (!profileName) return members[0];
-    return members.find((m) => m.name === profileName) ?? members[0];
-  }, [members, profileName]);
+    if (user?.id) {
+      const byUserId = members.find((m) => m.userId === user.id);
+      if (byUserId) return byUserId;
+    }
+    if (profileName) {
+      return members.find((m) => m.name === profileName) ?? null;
+    }
+    return null;
+  }, [members, profileName, user]);
 
   const myTrainer = useMemo(
     () => (myMember?.trainerId ? trainers.find((t) => t.id === myMember.trainerId) ?? null : null),

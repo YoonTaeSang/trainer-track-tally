@@ -83,9 +83,15 @@ function MemberHome() {
 
 
   const myMember = useMemo(() => {
-    if (!profileName) return members[0];
-    return members.find((m) => m.name === profileName) ?? members[0];
-  }, [members, profileName]);
+    if (user?.id) {
+      const byUserId = members.find((m) => m.userId === user.id);
+      if (byUserId) return byUserId;
+    }
+    if (profileName) {
+      return members.find((m) => m.name === profileName) ?? null;
+    }
+    return null;
+  }, [members, profileName, user]);
 
   const myTrainer = useMemo(() => {
     if (!myMember?.trainerId) return null;

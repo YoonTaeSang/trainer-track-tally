@@ -33,10 +33,16 @@ function MemberMessages() {
       .then(({ data }) => setProfileName(data?.name ?? ""));
   }, [user]);
 
-  const myMember = useMemo(
-    () => (profileName ? members.find((m) => m.name === profileName) : undefined),
-    [members, profileName]
-  );
+  const myMember = useMemo(() => {
+    if (user?.id) {
+      const byUserId = members.find((m) => m.userId === user.id);
+      if (byUserId) return byUserId;
+    }
+    if (profileName) {
+      return members.find((m) => m.name === profileName) ?? undefined;
+    }
+    return undefined;
+  }, [members, profileName, user]);
   const myTrainer = useMemo(
     () => (myMember?.trainerId ? trainers.find((t) => t.id === myMember.trainerId) ?? null : null),
     [myMember, trainers]
