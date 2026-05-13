@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useMembers, useSchedules, useTrainers, type Schedule } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
 
@@ -59,7 +59,7 @@ const OVERLAP_THRESHOLD = 3;
 export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) => void }) {
   const [members] = useMembers();
   const [schedules, setSchedules] = useSchedules();
-  const [trainers] = useTrainers();
+  const [trainers] = usePublicTrainers();
   const { role } = useRole();
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isAdmin = role === "admin";
