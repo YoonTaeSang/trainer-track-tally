@@ -352,13 +352,13 @@ function MyScheduleMemberPage() {
 
       {/* Change-request dialog */}
       <Dialog open={!!changing} onOpenChange={(v) => !v && setChanging(null)}>
-        <DialogContent className="max-w-[400px]">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] max-w-[400px] flex-col gap-0 p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-4">
             <DialogTitle>일정 변경 요청</DialogTitle>
             <DialogDescription>원하는 날짜와 시간을 선택해주세요.</DialogDescription>
           </DialogHeader>
           {changing && (
-            <div className="space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
               {/* 기존 일정 표시 */}
               <p className="text-xs text-muted-foreground">
                 기존: {changing.date} {changing.time}
@@ -491,7 +491,7 @@ function MyScheduleMemberPage() {
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t bg-background px-6 py-3">
             <Button variant="outline" onClick={() => setChanging(null)}>
               취소
             </Button>
