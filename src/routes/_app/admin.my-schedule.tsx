@@ -226,7 +226,9 @@ function MySchedulePage() {
       end_time: repeatEnd,
       specific_date: null as string | null,
     }));
-    const { error } = await (supabase as any).from("trainer_availability").insert(rows);
+    const { error } = await (supabase as any)
+      .from("trainer_availability")
+      .upsert(rows, { onConflict: "trainer_id,weekday,start_time,specific_date" });
     if (error) return toast.error(error.message);
     toast.success(`${rows.length}개 요일 반복 일정이 추가되었습니다.`);
     load();
@@ -243,13 +245,18 @@ function MySchedulePage() {
   const addTimeOff = async () => {
     if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
     if (!offDate) return;
-    const { error } = await (supabase as any).from("trainer_time_off").insert({
-      trainer_id: trainerId,
-      date: offDate,
-      reason: offReason.trim(),
-      start_time: null,
-      end_time: null,
-    });
+    const { error } = await (supabase as any)
+      .from("trainer_time_off")
+      .upsert(
+        {
+          trainer_id: trainerId,
+          date: offDate,
+          reason: offReason.trim(),
+          start_time: null,
+          end_time: null,
+        },
+        { onConflict: "trainer_id,date,start_time,end_time" }
+      );
     if (error) return toast.error(error.message);
     toast.success("예약 불가 날짜가 등록되었습니다.");
     setOffReason("");
@@ -283,7 +290,9 @@ function MySchedulePage() {
         end_time: r.end,
         specific_date: date,
       }));
-      const { error } = await (supabase as any).from("trainer_availability").insert(rows);
+      const { error } = await (supabase as any)
+        .from("trainer_availability")
+        .upsert(rows, { onConflict: "trainer_id,weekday,start_time,specific_date" });
       if (error) return toast.error(error.message);
     } else if (action === "block") {
       const targets = indices.filter((i) => getSlotStatus(date, i) === "available");
@@ -296,7 +305,9 @@ function MySchedulePage() {
         start_time: r.start,
         end_time: r.end,
       }));
-      const { error } = await (supabase as any).from("trainer_time_off").insert(rows);
+      const { error } = await (supabase as any)
+        .from("trainer_time_off")
+        .upsert(rows, { onConflict: "trainer_id,date,start_time,end_time" });
       if (error) return toast.error(error.message);
     } else if (action === "delete-off") {
       const offIds = new Set<string>();
@@ -665,23 +676,24 @@ function MySchedulePage() {
                   <span className="text-xs font-medium">{selectedSlots.size}개 선택됨</span>
                   <Button
                     size="sm"
-                    className="h-7 bg-emerald-600 px-2 text-xs text-white hover:bg-emerald-700"
+                    variant="outline"
+                    className="h-7 border-emerald-500/40 bg-emerald-500/15 px-2 text-xs text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-300"
                     onClick={() => runActionOnSelection("add")}
                   >
                     가능으로 설정
                   </Button>
                   <Button
                     size="sm"
-                    variant="destructive"
-                    className="h-7 px-2 text-xs"
+                    variant="outline"
+                    className="h-7 border-rose-500/40 bg-rose-500/15 px-2 text-xs text-rose-700 hover:bg-rose-500/25 dark:text-rose-300"
                     onClick={() => runActionOnSelection("block")}
                   >
                     예약 불가로 설정
                   </Button>
                   <Button
                     size="sm"
-                    variant="secondary"
-                    className="h-7 px-2 text-xs"
+                    variant="outline"
+                    className="h-7 border-border bg-muted px-2 text-xs text-muted-foreground hover:bg-muted/80"
                     onClick={() => runActionOnSelection("delete-off")}
                   >
                     해제
@@ -712,17 +724,18 @@ function MySchedulePage() {
                 </span>
               </div>
 
-              {/* 분 단위 라벨 (한 번만) */}
+              {/* 분 단위 라벨 — 슬롯 경계선 위에 정렬 */}
               <div className="mb-1 flex items-center gap-2">
                 <div className="w-14 shrink-0" />
-                <div className="flex flex-1 gap-px">
-                  {[":00", ":10", ":20", ":30", ":40", ":50"].map((label) => (
-                    <div
-                      key={label}
-                      className="flex-1 text-center font-mono text-[10px] text-muted-foreground"
+                <div className="relative h-3 flex-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <span
+                      key={i}
+                      className="pointer-events-none absolute top-0 -translate-x-1/2 font-mono text-[10px] text-muted-foreground"
+                      style={{ left: `${(i / 6) * 100}%` }}
                     >
-                      {label}
-                    </div>
+                      {i * 10}
+                    </span>
                   ))}
                 </div>
               </div>
