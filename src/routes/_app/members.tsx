@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plus, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw } from "lucide-react";
+import { Plus, Pencil, CalendarPlus, BatteryCharging, UserX, RotateCcw, ArrowRightLeft, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,9 +35,10 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useMembers, useSchedules, useTrainers, uid, type Member } from "@/lib/store";
+import { useMembers, useSchedules, useTrainers, uid, refetchAllTables, type Member } from "@/lib/store";
 import { useRole } from "@/hooks/use-role";
 import { useCurrentTrainer } from "@/hooks/use-current-trainer";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -80,6 +81,8 @@ function MembersPage() {
   const [chargeAmount, setChargeAmount] = useState(10);
   const [deactivateFor, setDeactivateFor] = useState<Member | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [convertFor, setConvertFor] = useState<Member | null>(null);
+  const [converting, setConverting] = useState(false);
 
   const assignTrainer = (memberId: string, trainerId: string) => {
     const tid = trainerId === "__none__" ? null : trainerId;
@@ -165,6 +168,32 @@ function MembersPage() {
     setDeactivateFor(null);
   };
 
+  const convertToTrainer = async () => {
+    if (!convertFor?.userId) return;
+    setConverting(true);
+    try {
+      await supabase.from("user_roles").delete().eq("user_id", convertFor.userId);
+      await supabase.from("user_roles").insert({ user_id: convertFor.userId, role: "trainer" });
+      const { data: existing } = await supabase
+        .from("trainers").select("id").eq("user_id", convertFor.userId).maybeSingle();
+      if (!existing) {
+        await supabase.from("trainers").insert({
+          user_id: convertFor.userId,
+          name: convertFor.name,
+          phone: convertFor.phone,
+        });
+      }
+      setMembers((prev) => prev.filter((m) => m.id !== convertFor.id));
+      refetchAllTables();
+      toast.success(`${convertFor.name}이(가) 트레이너로 전환되었습니다.`);
+    } catch (e: any) {
+      toast.error(`전환 실패: ${e?.message ?? "알 수 없는 오류"}`);
+    } finally {
+      setConverting(false);
+      setConvertFor(null);
+    }
+  };
+
   const reactivate = (id: string) => {
     setMembers((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: "active" } : m))
@@ -229,6 +258,11 @@ function MembersPage() {
           {isAdmin && (
             <Button size="icon" variant="ghost" onClick={() => openEdit(m)} title="수정">
               <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {isAdmin && m.userId && !isInactive && (
+            <Button size="icon" variant="ghost" onClick={() => setConvertFor(m)} title="트레이너로 전환">
+              <ArrowRightLeft className="h-4 w-4" />
             </Button>
           )}
           {isAdmin && !isInactive && (
@@ -422,6 +456,24 @@ function MembersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!convertFor} onOpenChange={(v) => !v && !converting && setConvertFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>트레이너로 전환</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-medium text-foreground">{convertFor?.name}</span> 회원을 트레이너로 전환합니다.
+              <br />회원 목록에서 제거되고 트레이너 관리에 추가됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={converting}>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={convertToTrainer} disabled={converting}>
+              {converting ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />전환 중...</> : "트레이너로 전환"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deactivateFor} onOpenChange={(v) => !v && setDeactivateFor(null)}>
         <AlertDialogContent>

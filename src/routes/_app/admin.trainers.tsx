@@ -1,6 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronRight, AlertTriangle, Loader2, ArrowRightLeft } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +37,7 @@ import { toast } from "sonner";
 import { useTrainers, useMembers, useSchedules, useTableStatus, refetchAllTables, uid, type Trainer } from "@/lib/store";
 import { useRoleGuard } from "@/hooks/use-role-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/admin/trainers")({
   component: TrainersPageWrapper,
@@ -56,6 +67,8 @@ function TrainersPage() {
   const [editing, setEditing] = useState<Trainer | null>(null);
   const [form, setForm] = useState<Omit<Trainer, "id">>(empty);
   const [search, setSearch] = useState("");
+  const [convertFor, setConvertFor] = useState<Trainer | null>(null);
+  const [converting, setConverting] = useState(false);
 
   const monthPrefix = new Date().toISOString().slice(0, 7);
 
@@ -110,6 +123,32 @@ function TrainersPage() {
     e.stopPropagation();
     setTrainers((prev) => prev.filter((t) => t.id !== id));
     toast.success("트레이너가 삭제되었습니다.");
+  };
+
+  const convertToMember = async () => {
+    if (!convertFor?.userId) return;
+    setConverting(true);
+    try {
+      const { error: delErr } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", convertFor.userId);
+      if (delErr) throw delErr;
+
+      const { error: insErr } = await supabase
+        .from("user_roles")
+        .insert({ user_id: convertFor.userId, role: "member" });
+      if (insErr) throw insErr;
+
+      setTrainers((prev) => prev.filter((t) => t.id !== convertFor.id));
+      refetchAllTables();
+      toast.success(`${convertFor.name}이(가) 회원으로 전환되었습니다.`);
+    } catch (e: any) {
+      toast.error(`전환 실패: ${e?.message ?? "알 수 없는 오류"}`);
+    } finally {
+      setConverting(false);
+      setConvertFor(null);
+    }
   };
 
   const filtered = trainers.filter(
@@ -238,6 +277,16 @@ function TrainersPage() {
                         <Button size="icon" variant="ghost" onClick={(e) => openEdit(t, e)} title="수정">
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {t.userId && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); setConvertFor(t); }}
+                            title="회원으로 전환"
+                          >
+                            <ArrowRightLeft className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={(e) => remove(t.id, e)} title="삭제">
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -251,6 +300,23 @@ function TrainersPage() {
           </Table>
         </CardContent>
       </Card>
+      <AlertDialog open={!!convertFor} onOpenChange={(v) => !v && !converting && setConvertFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>회원으로 전환</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-medium text-foreground">{convertFor?.name}</span> 트레이너를 회원으로 전환합니다.
+              <br />트레이너 목록에서 제거되고 회원으로 변경됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={converting}>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={convertToMember} disabled={converting}>
+              {converting ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />전환 중...</> : "회원으로 전환"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
