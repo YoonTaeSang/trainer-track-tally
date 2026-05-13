@@ -34,7 +34,14 @@ export const Route = createFileRoute("/login")({
 });
 
 const emailSchema = z.string().trim().email("올바른 이메일을 입력해주세요").max(255);
-const passwordSchema = z.string().min(6, "비밀번호는 6자 이상이어야 합니다").max(72);
+// 회원가입용: 8자 이상 + 영문 + 숫자 강제
+const passwordSchema = z.string()
+  .min(8, "비밀번호는 8자 이상이어야 합니다")
+  .max(72)
+  .regex(/[a-zA-Z]/, "영문을 포함해야 합니다")
+  .regex(/[0-9]/, "숫자를 포함해야 합니다");
+// 로그인용: 기존 사용자 보호를 위해 길이 검증만
+const loginPasswordSchema = z.string().min(1, "비밀번호를 입력해주세요").max(72);
 const nameSchema = z.string().trim().min(1, "이름을 입력해주세요").max(50);
 const phoneSchema = z.string().trim().min(1, "전화번호를 입력해주세요").max(20);
 const birthSchema = z.string().trim().min(1, "생년월일을 입력해주세요");
@@ -62,6 +69,7 @@ function LoginPage() {
 
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
   const [signupName, setSignupName] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupBirth, setSignupBirth] = useState("");
@@ -85,7 +93,7 @@ function LoginPage() {
     e.preventDefault();
     try {
       emailSchema.parse(loginEmail);
-      passwordSchema.parse(loginPassword);
+      loginPasswordSchema.parse(loginPassword);
     } catch (err) {
       if (err instanceof z.ZodError) toast.error(err.errors[0].message);
       return;
@@ -124,6 +132,10 @@ function LoginPage() {
       addressSchema.parse(signupAddress);
     } catch (err) {
       if (err instanceof z.ZodError) toast.error(err.errors[0].message);
+      return;
+    }
+    if (signupPassword !== signupPasswordConfirm) {
+      toast.error("비밀번호가 일치하지 않습니다");
       return;
     }
     setLoading(true);
@@ -227,8 +239,40 @@ function LoginPage() {
                   <Input id="signup-email" type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">비밀번호 (6자 이상)</Label>
+                  <Label htmlFor="signup-password">비밀번호 (8자 이상, 영문+숫자)</Label>
                   <Input id="signup-password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
+                  <p className="text-[11px] text-muted-foreground">예: pt123456</p>
+                  {signupPassword.length > 0 && (() => {
+                    const ok8 = signupPassword.length >= 8;
+                    const okAlpha = /[a-zA-Z]/.test(signupPassword);
+                    const okDigit = /[0-9]/.test(signupPassword);
+                    return (
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        <span className={ok8 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                          {ok8 ? "✓" : "○"} 8자 이상
+                        </span>
+                        <span className={okAlpha ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                          {okAlpha ? "✓" : "○"} 영문 포함
+                        </span>
+                        <span className={okDigit ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                          {okDigit ? "✓" : "○"} 숫자 포함
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password-confirm">비밀번호 확인</Label>
+                  <Input
+                    id="signup-password-confirm"
+                    type="password"
+                    value={signupPasswordConfirm}
+                    onChange={(e) => setSignupPasswordConfirm(e.target.value)}
+                    required
+                  />
+                  {signupPasswordConfirm.length > 0 && signupPassword !== signupPasswordConfirm && (
+                    <p className="text-[11px] text-destructive">비밀번호가 일치하지 않습니다</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-phone">전화번호 <span className="text-destructive">*</span></Label>
