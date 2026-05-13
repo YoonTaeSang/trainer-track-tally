@@ -64,7 +64,22 @@ export function AppSidebar() {
 
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [profileName, setProfileName] = useState("");
   const [allMembers] = useMembers();
+
+  // 사이드바 하단 인사말용 이름 조회
+  useEffect(() => {
+    if (!user) {
+      setProfileName("");
+      return;
+    }
+    supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfileName(data?.name ?? ""));
+  }, [user]);
   const pendingMemberCount = useMemo(
     () => allMembers.filter((m) => m.status === "pending").length,
     [allMembers]
@@ -173,7 +188,12 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t">
         <div className="flex flex-col gap-2 p-2">
-          <span className="truncate px-2 text-xs text-muted-foreground">{user?.email}</span>
+          <div className="px-2">
+            <p className="mb-1 truncate text-[13px] font-medium leading-tight">
+              안녕하세요, {profileName || user?.email?.split("@")[0] || "회원"}님 👋
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+          </div>
           <SidebarMenuButton onClick={handleLogout}>
             <LogOut className="h-4 w-4" />
             <span>로그아웃</span>
