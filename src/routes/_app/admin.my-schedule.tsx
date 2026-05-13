@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -93,12 +93,10 @@ function MySchedulePage() {
   const [calMonth, setCalMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<string | null>(toDateStr(new Date()));
 
-  // 슬롯 드래그 선택 (인덱스 0..95)
-  const [dragging, setDragging] = useState<{
-    startIdx: number;
-    endIdx: number;
-    action: "add" | "block" | "delete-off";
-  } | null>(null);
+  // 슬롯 선택 세트 (인덱스 0..95) — 액션 버튼으로 일괄 처리
+  const [selectedSlots, setSelectedSlots] = useState<Set<number>>(new Set());
+  // 드래그 중인 범위 (mouseup 시 selectedSlots에 병합)
+  const [drag, setDrag] = useState<{ start: number; current: number; isDrag: boolean } | null>(null);
 
   const load = useCallback(async () => {
     if (!trainerId) {
@@ -123,12 +121,39 @@ function MySchedulePage() {
     load();
   }, [load]);
 
-  // 드래그 종료를 윈도우 mouseup으로도 잡음 (다른 곳으로 마우스 빠져나가도 정리)
+  // 드래그/클릭 종료 시 선택 세트에 반영
+  const dragRef = useRef(drag);
+  dragRef.current = drag;
+
+  const commitDrag = useCallback(() => {
+    const d = dragRef.current;
+    if (!d) return;
+    if (!d.isDrag) {
+      // Click: toggle single slot
+      setSelectedSlots((prev) => {
+        const next = new Set(prev);
+        if (next.has(d.start)) next.delete(d.start);
+        else next.add(d.start);
+        return next;
+      });
+    } else {
+      // Drag: add range
+      const s = Math.min(d.start, d.current);
+      const e = Math.max(d.start, d.current);
+      setSelectedSlots((prev) => {
+        const next = new Set(prev);
+        for (let i = s; i <= e; i++) next.add(i);
+        return next;
+      });
+    }
+    setDrag(null);
+  }, []);
+
   useEffect(() => {
-    const onUp = () => setDragging(null);
+    const onUp = () => commitDrag();
     window.addEventListener("mouseup", onUp);
     return () => window.removeEventListener("mouseup", onUp);
-  }, []);
+  }, [commitDrag]);
 
   const myMemberIds = useMemo(
     () => new Set(allMembers.filter((m) => m.trainerId === trainerId).map((m) => m.id)),
@@ -329,37 +354,44 @@ function MySchedulePage() {
     load();
   };
 
+  // 클릭/드래그 → 선택만 (액션은 별도 버튼)
   const handleSlotMouseDown = (idx: number) => {
     if (!selectedDate) return;
-    const status = getSlotStatus(selectedDate, idx);
-    if (status === "booked") return;
-    const action: "add" | "block" | "delete-off" =
-      status === "none" ? "add" : status === "available" ? "block" : "delete-off";
-    setDragging({ startIdx: idx, endIdx: idx, action });
+    if (getSlotStatus(selectedDate, idx) === "booked") return;
+    setDrag({ start: idx, current: idx, isDrag: false });
   };
 
   const handleSlotMouseEnter = (idx: number) => {
-    if (!dragging) return;
-    setDragging((d) => (d ? { ...d, endIdx: idx } : null));
-  };
-
-  const handleSlotMouseUp = async () => {
-    if (!dragging || !selectedDate) return;
-    const s = Math.min(dragging.startIdx, dragging.endIdx);
-    const e = Math.max(dragging.startIdx, dragging.endIdx);
-    const action = dragging.action;
-    const indices: number[] = [];
-    for (let i = s; i <= e; i++) indices.push(i);
-    setDragging(null);
-    await applyAction(selectedDate, indices, action);
+    setDrag((d) => (d ? { ...d, current: idx, isDrag: true } : null));
   };
 
   const isInDragRange = (idx: number) => {
-    if (!dragging) return false;
-    const s = Math.min(dragging.startIdx, dragging.endIdx);
-    const e = Math.max(dragging.startIdx, dragging.endIdx);
+    if (!drag || !drag.isDrag) return false;
+    const s = Math.min(drag.start, drag.current);
+    const e = Math.max(drag.start, drag.current);
     return idx >= s && idx <= e;
   };
+
+  // 선택된 슬롯에 액션 적용 후 선택 해제
+  const runActionOnSelection = async (action: "add" | "block" | "delete-off") => {
+    if (!selectedDate) return;
+    const indices = Array.from(selectedSlots).filter(
+      (i) => getSlotStatus(selectedDate, i) !== "booked"
+    );
+    if (indices.length === 0) {
+      toast.error("선택된 슬롯이 없습니다.");
+      return;
+    }
+    await applyAction(selectedDate, indices, action);
+    setSelectedSlots(new Set());
+  };
+
+  const cancelSelection = () => setSelectedSlots(new Set());
+
+  // 다른 날짜로 이동하면 선택 초기화
+  useEffect(() => {
+    setSelectedSlots(new Set());
+  }, [selectedDate]);
 
   // ---- 달력 ----
   const calDays = useMemo(() => {
@@ -626,18 +658,76 @@ function MySchedulePage() {
               <p className="mb-2 text-sm font-medium">
                 {selectedDate} ({WEEK_LABELS[new Date(`${selectedDate}T00:00:00`).getDay()]}) 시간대
               </p>
-              <div className="mb-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+
+              {/* 선택된 슬롯이 1개 이상일 때 액션 바 */}
+              {selectedSlots.size > 0 && (
+                <div className="sticky top-0 z-10 mb-2 flex flex-wrap items-center gap-2 rounded-md border bg-background p-2 shadow-sm">
+                  <span className="text-xs font-medium">{selectedSlots.size}개 선택됨</span>
+                  <Button
+                    size="sm"
+                    className="h-7 bg-emerald-600 px-2 text-xs text-white hover:bg-emerald-700"
+                    onClick={() => runActionOnSelection("add")}
+                  >
+                    가능으로 설정
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => runActionOnSelection("block")}
+                  >
+                    예약 불가로 설정
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => runActionOnSelection("delete-off")}
+                  >
+                    해제
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={cancelSelection}
+                  >
+                    선택 취소
+                  </Button>
+                </div>
+              )}
+
+              <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-3 w-3 rounded border border-border bg-background" /> 클릭 → 가능
+                  <span className="inline-block h-3 w-3 rounded border border-emerald-500/40 bg-emerald-500/15" /> 가능
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-3 w-3 rounded border border-emerald-500/40 bg-emerald-500/15" /> 다시 클릭 → 예약 불가
+                  <span className="inline-block h-3 w-3 rounded border border-rose-500/40 bg-rose-500/15" /> 예약 불가
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-3 w-3 rounded border border-rose-500/40 bg-rose-500/15" /> 한번 더 클릭 → 해제
+                  <span className="inline-block h-3 w-3 rounded border bg-background" /> 미설정
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block h-3 w-3 rounded ring-2 ring-blue-500" /> 선택됨
                 </span>
               </div>
-              <div className="space-y-1" onMouseLeave={() => dragging && setDragging(null)}>
+
+              {/* 분 단위 라벨 (한 번만) */}
+              <div className="mb-1 flex items-center gap-2">
+                <div className="w-14 shrink-0" />
+                <div className="flex flex-1 gap-px">
+                  {[":00", ":10", ":20", ":30", ":40", ":50"].map((label) => (
+                    <div
+                      key={label}
+                      className="flex-1 text-center font-mono text-[10px] text-muted-foreground"
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
                 {HOURS.map((hour) => {
                   const booked = mySchedulesByDateAndHour.get(selectedDate)?.get(hour);
                   const member = booked ? allMembers.find((m) => m.id === booked.memberId) : null;
@@ -656,6 +746,7 @@ function MySchedulePage() {
                           {Array.from({ length: SLOTS_PER_HOUR }).map((_, m) => {
                             const idx = baseIdx + m;
                             const status = getSlotStatus(selectedDate, idx);
+                            const selected = selectedSlots.has(idx);
                             const inDrag = isInDragRange(idx);
                             return (
                               <button
@@ -664,16 +755,16 @@ function MySchedulePage() {
                                 title={idxToTime(idx)}
                                 onMouseDown={() => handleSlotMouseDown(idx)}
                                 onMouseEnter={() => handleSlotMouseEnter(idx)}
-                                onMouseUp={handleSlotMouseUp}
                                 className={cn(
-                                  "h-8 flex-1 border transition select-none first:rounded-l-md last:rounded-r-md",
+                                  "relative h-8 flex-1 border transition select-none first:rounded-l-md last:rounded-r-md",
                                   status === "available" &&
                                     "border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25",
                                   status === "off" &&
                                     "border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25",
                                   status === "none" &&
                                     "border-border bg-background hover:bg-accent",
-                                  inDrag && "ring-2 ring-primary"
+                                  (selected || inDrag) &&
+                                    "z-[1] ring-2 ring-blue-500 ring-offset-0"
                                 )}
                               />
                             );
@@ -685,7 +776,7 @@ function MySchedulePage() {
                 })}
               </div>
               <p className="mt-3 text-[10px] text-muted-foreground">
-                슬롯에 마우스를 올리면 시간 툴팁이 표시되며, 드래그로 여러 슬롯을 한 번에 선택할 수 있습니다.
+                슬롯을 클릭하거나 드래그해서 선택 후, 위 버튼으로 설정하세요.
               </p>
             </div>
           )}
