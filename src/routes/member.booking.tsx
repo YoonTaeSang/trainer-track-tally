@@ -445,7 +445,7 @@ function MyScheduleMemberPage() {
                     <span className="inline-block h-2.5 w-2.5 rounded border border-emerald-500/40 bg-emerald-500/15" /> 가능
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="inline-block h-2.5 w-2.5 rounded border border-rose-500/40 bg-rose-500/15" /> 휴무
+                    <span className="inline-block h-2.5 w-2.5 rounded border border-rose-500/40 bg-rose-500/15" /> 예약 불가
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <span className="inline-block h-2.5 w-2.5 rounded border bg-background" /> 미설정
