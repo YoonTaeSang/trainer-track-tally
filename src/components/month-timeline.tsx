@@ -54,7 +54,7 @@ const UNASSIGNED_COLOR = {
   dot: "bg-muted-foreground",
 };
 
-const OVERLAP_THRESHOLD = 3;
+const OVERLAP_THRESHOLD = 4;
 
 export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) => void }) {
   const [members] = useMembers();
