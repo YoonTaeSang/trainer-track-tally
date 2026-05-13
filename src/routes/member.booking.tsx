@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, ChevronLeft, ChevronRight, Clock, Info } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -206,15 +206,6 @@ function MyScheduleMemberPage() {
     });
   }, [dlgMonth]);
 
-  const dlgStatusFor = (d: Date): "off" | "available" | "none" => {
-    if (!myTrainer) return "none";
-    const ds = toDateStr(d);
-    if (timeOff.some((t) => t.trainer_id === myTrainer.id && t.date === ds)) return "off";
-    const slots = slotsFor(myTrainer.id, ds, availability, timeOff);
-    if (slots.length > 0) return "available";
-    return "none";
-  };
-
   const todayStrForCal = toDateStr(new Date());
 
   const submitChange = async () => {
@@ -364,15 +355,16 @@ function MyScheduleMemberPage() {
         <DialogContent className="max-w-[400px]">
           <DialogHeader>
             <DialogTitle>일정 변경 요청</DialogTitle>
-            <DialogDescription>
-              트레이너 가능 시간 내에서만 선택할 수 있습니다.
-            </DialogDescription>
+            <DialogDescription>원하는 날짜와 시간을 선택해주세요.</DialogDescription>
           </DialogHeader>
           {changing && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* 기존 일정 표시 */}
               <p className="text-xs text-muted-foreground">
                 기존: {changing.date} {changing.time}
               </p>
+
+              {/* 1. 달력 */}
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <Label className="text-xs">새 날짜</Label>
@@ -400,7 +392,10 @@ function MyScheduleMemberPage() {
                 </div>
                 <div className="mb-1 grid grid-cols-7 gap-0.5">
                   {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
-                    <div key={w} className="py-0.5 text-center text-[10px] font-medium text-muted-foreground">
+                    <div
+                      key={w}
+                      className="py-0.5 text-center text-[10px] font-medium text-muted-foreground"
+                    >
                       {w}
                     </div>
                   ))}
@@ -408,12 +403,11 @@ function MyScheduleMemberPage() {
                 <div className="grid grid-cols-7 gap-0.5">
                   {dlgDays.map((d) => {
                     const ds = toDateStr(d);
-                    const status = dlgStatusFor(d);
                     const inMonth = isSameMonth(d, dlgMonth);
                     const isPast = ds < todayStrForCal;
                     const isToday = isSameDay(d, new Date());
                     const selected = reqDate === ds;
-                    const clickable = inMonth && !isPast && status === "available";
+                    const clickable = inMonth && !isPast;
                     return (
                       <button
                         type="button"
@@ -424,46 +418,35 @@ function MyScheduleMemberPage() {
                           setReqTime(null);
                         }}
                         className={cn(
-                          "relative flex aspect-square flex-col items-center justify-center rounded-md border text-[11px] transition",
+                          "relative flex aspect-square flex-col items-center justify-center rounded-md border bg-background text-[11px] text-foreground transition",
                           !inMonth && "opacity-30",
-                          isPast && "opacity-40",
-                          selected && "ring-2 ring-primary ring-offset-1",
-                          status === "available" && "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-                          status === "off" && "border-rose-500/40 bg-rose-500/15 text-rose-700 dark:text-rose-300",
-                          status === "none" && "border-border bg-background text-muted-foreground",
-                          clickable && "cursor-pointer hover:brightness-95",
-                          !clickable && "cursor-not-allowed"
+                          isPast && "cursor-not-allowed opacity-40",
+                          clickable && "cursor-pointer hover:bg-accent",
+                          selected && "ring-2 ring-primary ring-offset-1"
                         )}
                       >
-                        <span className={cn("font-medium", isToday && "underline")}>{format(d, "d")}</span>
+                        <span className={cn("font-medium", isToday && "underline")}>
+                          {format(d, "d")}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <span className="inline-block h-2.5 w-2.5 rounded border border-emerald-500/40 bg-emerald-500/15" /> 가능
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="inline-block h-2.5 w-2.5 rounded border border-rose-500/40 bg-rose-500/15" /> 예약 불가
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="inline-block h-2.5 w-2.5 rounded border bg-background" /> 미설정
-                  </span>
-                </div>
               </div>
+
+              {/* 2. 시간 슬롯 */}
               <div>
                 <Label className="text-xs">새 시간 ({reqDate})</Label>
                 {availability.length === 0 && timeOff.length === 0 ? (
-                  <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                    트레이너가 아직 가능 시간을 설정하지 않았습니다.
+                  <p className="mt-1 rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                    트레이너가 가능 시간을 설정하지 않았습니다.
                   </p>
                 ) : candidateSlots.length === 0 ? (
-                  <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                    이 날에는 트레이너 가능 시간이 없습니다 (예약 불가 또는 미설정).
+                  <p className="mt-1 rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    이 날에는 트레이너 가능 시간이 없습니다.
                   </p>
                 ) : (
-                  <div className="grid max-h-48 grid-cols-3 gap-1.5 overflow-y-auto p-0.5">
+                  <div className="mt-1 grid max-h-60 grid-cols-4 gap-1 overflow-y-auto p-0.5">
                     {candidateSlots.map(({ slot, taken }) => {
                       const active = reqTime === slot;
                       return (
@@ -472,15 +455,18 @@ function MyScheduleMemberPage() {
                           type="button"
                           disabled={taken}
                           onClick={() => setReqTime(slot)}
-                          className={`flex items-center justify-center gap-1 rounded-md border px-1 py-1.5 text-xs transition ${
-                            active
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : taken
-                              ? "cursor-not-allowed border-border bg-muted text-muted-foreground"
-                              : "border-border bg-background hover:bg-accent"
-                          }`}
+                          className={cn(
+                            "rounded-md border px-1 py-1 text-[13px] tabular-nums transition",
+                            active &&
+                              "border-primary bg-primary text-primary-foreground",
+                            !active &&
+                              taken &&
+                              "cursor-not-allowed border-border bg-muted text-muted-foreground line-through",
+                            !active &&
+                              !taken &&
+                              "border-border bg-background hover:bg-accent"
+                          )}
                         >
-                          <Clock className="h-3 w-3" />
                           {slot}
                         </button>
                       );
@@ -489,6 +475,7 @@ function MyScheduleMemberPage() {
                 )}
               </div>
 
+              {/* 3. 메시지 */}
               <div>
                 <Label className="text-xs">트레이너에게 메시지 (선택)</Label>
                 <Textarea
