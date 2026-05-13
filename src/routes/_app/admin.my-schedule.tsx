@@ -51,7 +51,12 @@ function MySchedulePage() {
   const [offReason, setOffReason] = useState("");
 
   const load = useCallback(async () => {
-    if (!trainerId) return;
+    if (!trainerId) {
+      setAvailability([]);
+      setTimeOff([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [a, t] = await Promise.all([fetchAvailability(trainerId), fetchTimeOff(trainerId)]);
@@ -69,7 +74,7 @@ function MySchedulePage() {
   }, [load]);
 
   const addAvailability = async () => {
-    if (!trainerId) return;
+    if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
     if (newStart >= newEnd) return toast.error("종료 시간이 시작 시간보다 늦어야 합니다.");
     const { error } = await (supabase as any).from("trainer_availability").insert({
       trainer_id: trainerId,
@@ -83,13 +88,15 @@ function MySchedulePage() {
   };
 
   const removeAvailability = async (id: string) => {
+    if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
     const { error } = await (supabase as any).from("trainer_availability").delete().eq("id", id);
     if (error) return toast.error(error.message);
     load();
   };
 
   const addTimeOff = async () => {
-    if (!trainerId || !offDate) return;
+    if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
+    if (!offDate) return;
     const { error } = await (supabase as any).from("trainer_time_off").insert({
       trainer_id: trainerId,
       date: offDate,
@@ -102,6 +109,7 @@ function MySchedulePage() {
   };
 
   const removeTimeOff = async (id: string) => {
+    if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
     const { error } = await (supabase as any).from("trainer_time_off").delete().eq("id", id);
     if (error) return toast.error(error.message);
     load();
@@ -141,16 +149,6 @@ function MySchedulePage() {
       </Card>
     );
   }
-  if (!trainerId) {
-    return (
-      <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          연결된 트레이너 정보가 없습니다. 관리자에게 문의하세요.
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div>
