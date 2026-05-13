@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
-import { useTrainers, useTableStatus, refetchAllTables } from "@/lib/store";
+import { usePublicTrainers, useTableStatus, refetchAllTables } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { DEV_BYPASS, getDevRole, onDevRoleChange } from "@/lib/dev-mode";
 
@@ -20,8 +20,8 @@ let linkingUserId: string | null = null;
 export function useCurrentTrainer() {
   const { user } = useAuth();
   const { role, loading: roleLoading } = useRole();
-  const [trainers] = useTrainers();
-  const trainersStatus = useTableStatus("trainers");
+  const [trainers] = usePublicTrainers();
+  const trainersStatus = useTableStatus("trainers_public");
   const [profileName, setProfileName] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [devRole, setDevRoleState] = useState(DEV_BYPASS ? getDevRole() : null);

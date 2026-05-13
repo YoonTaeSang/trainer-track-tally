@@ -321,7 +321,9 @@ export function useTrainers() {
 }
 
 /** Subscribe to load/error status of a store-managed table. */
-export function useTableStatus(table: "trainers" | "members" | "schedules" | "workout_logs") {
+export function useTableStatus(
+  table: "trainers" | "trainers_public" | "members" | "schedules" | "workout_logs"
+) {
   const c = getCache<any>(table);
   const [, force] = useState(0);
   useEffect(() => {
@@ -358,19 +360,28 @@ export function usePublicTrainers(): readonly [Trainer[]] {
   useEffect(() => {
     const listener = (d: Trainer[]) => setLocal(d);
     c.listeners.add(listener);
-    if (!c.loaded) {
+    if (!c.loaded && !c.loading) {
       // trainers_public view — load once; realtime via trainers table
+      c.loading = true;
+      c.error = null;
+      notifyStatus(c);
       (async () => {
-        const { data: rows, error } = await (supabase as any)
-          .from("trainers_public")
-          .select("id,user_id,name,created_at");
-        if (error) {
-          console.error("[store:trainers_public] error", error);
-          return;
+        try {
+          const { data: rows, error } = await (supabase as any)
+            .from("trainers_public")
+            .select("id,user_id,name,created_at");
+          if (error) {
+            console.error("[store:trainers_public] error", error);
+            c.error = new Error(error.message ?? "Failed to load trainers_public");
+            return;
+          }
+          c.data = (rows ?? []).map(mapPublicTrainer.fromRow);
+          c.loaded = true;
+          notify(c);
+        } finally {
+          c.loading = false;
+          notifyStatus(c);
         }
-        c.data = (rows ?? []).map(mapPublicTrainer.fromRow);
-        c.loaded = true;
-        notify(c);
       })();
     } else {
       setLocal(c.data);
@@ -387,6 +398,7 @@ export function usePublicTrainers(): readonly [Trainer[]] {
           c.data = (rows ?? []).map(mapPublicTrainer.fromRow);
           c.loaded = true;
           notify(c);
+          notifyStatus(c);
         })
         .subscribe();
     }
