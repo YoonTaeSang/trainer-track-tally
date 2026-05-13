@@ -354,32 +354,10 @@ function MySchedulePage() {
     });
   }, [calMonth]);
 
-  // 그날 슬롯들의 상태 카운트를 사용해 정확한 day-level 상태 산출
-  const calDayStatusFor = useCallback(
-    (
-      date: string
-    ): { kind: "off" | "full" | "partial" | "available" | "none"; bookedCount: number } => {
-      const wholeOff = timeOff.find(
-        (t) => t.trainer_id === trainerId && t.date === date && !t.start_time && !t.end_time
-      );
-      if (wholeOff) return { kind: "off", bookedCount: 0 };
-
-      let available = 0;
-      let booked = 0;
-      for (const h of SLOT_HOURS) {
-        const st = getSlotStatus(date, h);
-        if (st === "available") available++;
-        else if (st === "booked") {
-          booked++;
-          available++; // booked also counted in total possible slots
-        }
-      }
-      if (booked > 0 && booked === available) return { kind: "full", bookedCount: booked };
-      if (booked > 0) return { kind: "partial", bookedCount: booked };
-      if (available > 0) return { kind: "available", bookedCount: 0 };
-      return { kind: "none", bookedCount: 0 };
-    },
-    [getSlotStatus, timeOff, trainerId]
+  // 그날의 본인 회원 수업 건수
+  const bookedCountFor = useCallback(
+    (date: string): number => mySchedulesByDateAndHour.get(date)?.size ?? 0,
+    [mySchedulesByDateAndHour]
   );
 
   // ---- 가드 ----
@@ -581,14 +559,11 @@ function MySchedulePage() {
             <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
               초록 · 가능
             </Badge>
-            <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 dark:text-amber-300">
-              노랑 · 일부 수업
-            </Badge>
-            <Badge variant="secondary" className="bg-muted text-muted-foreground">
-              회색 · 꽉 참
-            </Badge>
             <Badge variant="secondary" className="bg-rose-500/15 text-rose-700 dark:text-rose-300">
               빨강 · 예약 불가
+            </Badge>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+              회색 · 수업
             </Badge>
           </div>
           <div className="mb-1 grid grid-cols-7 gap-1">
@@ -604,27 +579,24 @@ function MySchedulePage() {
               const today = isSameDay(d, new Date());
               const inMonth = isSameMonth(d, calMonth);
               const isSelected = selectedDate === ds;
-              const { kind, bookedCount } = calDayStatusFor(ds);
+              const bookedCount = bookedCountFor(ds);
               return (
                 <button
                   key={ds}
                   type="button"
                   onClick={() => setSelectedDate(ds)}
                   className={cn(
-                    "flex min-h-14 flex-col items-center justify-center rounded-md border p-1 text-xs transition",
+                    "flex min-h-14 flex-col items-center justify-center rounded-md border bg-background p-1 text-xs text-foreground transition hover:bg-accent",
                     !inMonth && "opacity-30",
-                    kind === "available" && "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300",
-                    kind === "partial" && "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300",
-                    kind === "full" && "bg-muted text-muted-foreground",
-                    kind === "off" && "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300",
-                    kind === "none" && "bg-background text-foreground",
                     today && "ring-1 ring-primary",
                     isSelected && "ring-2 ring-primary ring-offset-1"
                   )}
                 >
                   <span className="font-semibold">{format(d, "d")}</span>
                   {bookedCount > 0 && (
-                    <span className="mt-0.5 text-[9px] leading-tight">수업 {bookedCount}건</span>
+                    <span className="mt-0.5 text-[9px] leading-tight text-muted-foreground">
+                      수업 {bookedCount}건
+                    </span>
                   )}
                 </button>
               );
