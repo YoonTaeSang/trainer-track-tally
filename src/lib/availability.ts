@@ -6,6 +6,8 @@ export type Availability = {
   weekday: number; // 0 = Sun ... 6 = Sat
   start_time: string; // "HH:MM"
   end_time: string;
+  /** NULL: 매주 반복 (weekday 기준). 값 있음: 그 날짜 전용 가용 시간대 */
+  specific_date?: string | null;
 };
 
 export type TimeOff = {
@@ -13,6 +15,9 @@ export type TimeOff = {
   trainer_id: string;
   date: string; // YYYY-MM-DD
   reason: string;
+  /** NULL: 그날 전체 예약 불가. 값 있음: 그 시간대만 예약 불가 */
+  start_time?: string | null;
+  end_time?: string | null;
 };
 
 export const SLOT_MINUTES = 30;
@@ -44,20 +49,47 @@ export function expandSlots(start: string, end: string): string[] {
   return out;
 }
 
-/** All possible slots for a trainer on a given date, accounting for time-off. */
+/** All possible slots for a trainer on a given date, accounting for time-off.
+ *  Considers both recurring weekly availability and specific_date one-offs,
+ *  and removes slots blocked by whole-day or slot-level time-off. */
 export function slotsFor(
   trainerId: string,
   date: string,
   availability: Availability[],
   timeOff: TimeOff[]
 ): string[] {
-  const off = timeOff.find((t) => t.trainer_id === trainerId && t.date === date);
-  if (off) return [];
+  // Whole-day time-off (start/end null) takes precedence
+  const wholeOff = timeOff.find(
+    (t) =>
+      t.trainer_id === trainerId &&
+      t.date === date &&
+      !t.start_time &&
+      !t.end_time
+  );
+  if (wholeOff) return [];
+
   const d = new Date(`${date}T00:00:00`);
   const wd = d.getDay();
-  const rows = availability.filter((a) => a.trainer_id === trainerId && a.weekday === wd);
+  const rows = availability.filter(
+    (a) =>
+      a.trainer_id === trainerId &&
+      ((a.specific_date == null && a.weekday === wd) || a.specific_date === date)
+  );
   const all = new Set<string>();
   rows.forEach((r) => expandSlots(r.start_time, r.end_time).forEach((s) => all.add(s)));
+
+  // Subtract slot-level time-off
+  const slotOffs = timeOff.filter(
+    (t) =>
+      t.trainer_id === trainerId &&
+      t.date === date &&
+      t.start_time &&
+      t.end_time
+  );
+  for (const off of slotOffs) {
+    expandSlots(off.start_time as string, off.end_time as string).forEach((s) => all.delete(s));
+  }
+
   return Array.from(all).sort();
 }
 
