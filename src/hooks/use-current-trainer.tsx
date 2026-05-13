@@ -48,7 +48,7 @@ export function useCurrentTrainer() {
     };
   }, [user]);
 
-let trainer = trainers.find((t) => t.userId === user?.id)
+  let trainer = trainers.find((t) => t.userId === user?.id)
     ?? (profileName
       ? trainers.find((t) => t.name === profileName || t.name.startsWith(profileName ?? "")) ?? null
       : null);
