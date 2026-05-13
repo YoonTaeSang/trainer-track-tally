@@ -279,23 +279,76 @@ function MySchedulePage() {
     if (!trainerId) return toast.error("트레이너 계정 연결 후 사용 가능합니다.");
 
     if (action === "add") {
-      const targets = indices.filter((i) => getSlotStatus(date, i) === "none");
-      const ranges = mergeIdxRanges(targets);
-      if (ranges.length === 0) return;
+      // 선택된 슬롯들을 "가능"으로 만들기:
+      //   1) 해당 슬롯을 덮는 time_off가 있으면 우선 삭제 (예약 불가 → 가능 직접 전환)
+      //   2) 가용 시간(availability)이 없는 슬롯에 한해 specific_date row 추가
+      const nonBooked = indices.filter((i) => getSlotStatus(date, i) !== "booked");
       const wd = new Date(`${date}T00:00:00`).getDay();
-      const rows = ranges.map((r) => ({
-        trainer_id: trainerId,
-        weekday: wd,
-        start_time: r.start,
-        end_time: r.end,
-        specific_date: date,
-      }));
-      const { error } = await (supabase as any)
-        .from("trainer_availability")
-        .upsert(rows, { onConflict: "trainer_id,weekday,start_time,specific_date" });
-      if (error) return toast.error(error.message);
+
+      // 1) time_off 제거 대상 수집
+      const offIds = new Set<string>();
+      for (const i of nonBooked) {
+        const slotStart = idxToTime(i);
+        const slotEnd = idxToEndTime(i);
+        const slotOff = timeOff.find(
+          (t) =>
+            t.trainer_id === trainerId &&
+            t.date === date &&
+            t.start_time &&
+            t.end_time &&
+            (t.start_time as string) < slotEnd &&
+            (t.end_time as string) > slotStart
+        );
+        if (slotOff) {
+          offIds.add(slotOff.id);
+          continue;
+        }
+        const wholeOff = timeOff.find(
+          (t) => t.trainer_id === trainerId && t.date === date && !t.start_time && !t.end_time
+        );
+        if (wholeOff) offIds.add(wholeOff.id);
+      }
+      if (offIds.size > 0) {
+        const { error } = await (supabase as any)
+          .from("trainer_time_off")
+          .delete()
+          .in("id", Array.from(offIds));
+        if (error) return toast.error(error.message);
+      }
+
+      // 2) 이미 가용 시간으로 커버되는 슬롯은 새 row 불필요. 나머지만 upsert.
+      const targets = nonBooked.filter((i) => {
+        const slotStart = idxToTime(i);
+        const slotEnd = idxToEndTime(i);
+        const hasAvail = availability.some(
+          (a) =>
+            a.trainer_id === trainerId &&
+            ((a.specific_date == null && a.weekday === wd) || a.specific_date === date) &&
+            a.start_time <= slotStart &&
+            a.end_time >= slotEnd
+        );
+        return !hasAvail;
+      });
+      const ranges = mergeIdxRanges(targets);
+      if (ranges.length > 0) {
+        const rows = ranges.map((r) => ({
+          trainer_id: trainerId,
+          weekday: wd,
+          start_time: r.start,
+          end_time: r.end,
+          specific_date: date,
+        }));
+        const { error } = await (supabase as any)
+          .from("trainer_availability")
+          .upsert(rows, { onConflict: "trainer_id,weekday,start_time,specific_date" });
+        if (error) return toast.error(error.message);
+      }
     } else if (action === "block") {
-      const targets = indices.filter((i) => getSlotStatus(date, i) === "available");
+      // 선택된 모든 비-booked, 비-off 슬롯을 예약 불가로 변경
+      const targets = indices.filter((i) => {
+        const s = getSlotStatus(date, i);
+        return s === "available" || s === "none";
+      });
       const ranges = mergeIdxRanges(targets);
       if (ranges.length === 0) return;
       const rows = ranges.map((r) => ({
