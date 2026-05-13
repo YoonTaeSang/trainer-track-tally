@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { seedDemoData } from "@/lib/store";
+import { seedDemoData, refetchAllTables } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { DEV_BYPASS } from "@/lib/dev-mode";
@@ -22,6 +22,15 @@ function AppLayout() {
     seedDemoData();
   }, []);
   useRouteRefresh();
+
+  // Realtime RLS 이슈 보완: 탭이 다시 활성화될 때 전체 refetch
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refetchAllTables();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
 
   useEffect(() => {
     if (DEV_BYPASS) return;
