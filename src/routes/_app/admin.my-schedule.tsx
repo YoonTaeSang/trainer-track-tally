@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addDays, format, isSameDay } from "date-fns";
-import { CalendarDays, Plus, Trash2 } from "lucide-react";
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -115,27 +125,47 @@ function MySchedulePage() {
     load();
   };
 
-  // Mini-calendar: next 30 days status
-  const days30 = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return Array.from({ length: 30 }, (_, i) => addDays(today, i));
-  }, []);
+  // Monthly calendar
+  const [calMonth, setCalMonth] = useState(() => startOfMonth(new Date()));
+
+  const calDays = useMemo(() => {
+    const first = startOfMonth(calMonth);
+    const last = endOfMonth(calMonth);
+    return eachDayOfInterval({
+      start: startOfWeek(first, { weekStartsOn: 0 }),
+      end: endOfWeek(last, { weekStartsOn: 0 }),
+    });
+  }, [calMonth]);
 
   const myMemberIds = useMemo(
     () => new Set(allMembers.filter((m) => m.trainerId === trainerId).map((m) => m.id)),
     [allMembers, trainerId]
   );
 
+  const lessonInfoByDate = useMemo(() => {
+    const map = new Map<string, { count: number; firstTime: string }>();
+    if (!trainerId) return map;
+    for (const s of allSchedules) {
+      if (!myMemberIds.has(s.memberId)) continue;
+      const info = map.get(s.date);
+      if (!info) {
+        map.set(s.date, { count: 1, firstTime: s.time });
+      } else {
+        map.set(s.date, {
+          count: info.count + 1,
+          firstTime: s.time < info.firstTime ? s.time : info.firstTime,
+        });
+      }
+    }
+    return map;
+  }, [allSchedules, myMemberIds, trainerId]);
+
   const statusFor = (d: Date): "off" | "booked" | "available" | "none" => {
-    if (!trainerId) return "none";
     const ds = toDateStr(d);
     if (timeOff.some((t) => t.date === ds)) return "off";
+    if (lessonInfoByDate.has(ds)) return "booked";
+    if (!trainerId) return "none";
     const slots = slotsFor(trainerId, ds, availability, timeOff);
-    const booked = allSchedules.some(
-      (s) => s.date === ds && myMemberIds.has(s.memberId)
-    );
-    if (booked) return "booked";
     if (slots.length > 0) return "available";
     return "none";
   };
@@ -285,35 +315,59 @@ function MySchedulePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="h-4 w-4" /> 향후 30일 미리보기
+          <CardTitle className="flex items-center justify-between text-base">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              {format(calMonth, "yyyy년 M월")}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCalMonth((m) => addMonths(m, -1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setCalMonth(startOfMonth(new Date()))}>
+                이번달
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCalMonth((m) => addMonths(m, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-3 flex flex-wrap gap-3 text-xs">
+          <div className="mb-2 flex flex-wrap gap-2 text-xs">
             <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">초록 · 가능</Badge>
             <Badge variant="secondary" className="bg-rose-500/15 text-rose-700 dark:text-rose-300">빨강 · 휴무</Badge>
-            <Badge variant="secondary" className="bg-muted text-muted-foreground">회색 · 예약됨/불가</Badge>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">회색 · 수업있음</Badge>
+          </div>
+          <div className="mb-1 grid grid-cols-7 gap-1">
+            {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
+              <div key={w} className="py-1 text-center text-[11px] font-medium text-muted-foreground">{w}</div>
+            ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
-            {days30.map((d) => {
+            {calDays.map((d) => {
               const status = statusFor(d);
               const today = isSameDay(d, new Date());
+              const inMonth = isSameMonth(d, calMonth);
+              const ds = toDateStr(d);
+              const info = lessonInfoByDate.get(ds);
               return (
                 <div
-                  key={toDateStr(d)}
+                  key={ds}
                   className={cn(
-                    "flex h-14 flex-col items-center justify-center rounded-md border text-xs",
+                    "flex min-h-14 flex-col items-center justify-center rounded-md border p-1 text-xs",
+                    !inMonth && "opacity-30",
                     status === "available" && "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300",
                     status === "off" && "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300",
                     status === "booked" && "bg-muted text-muted-foreground",
-                    status === "none" && "bg-muted/40 text-muted-foreground",
+                    status === "none" && "bg-background text-foreground",
                     today && "ring-1 ring-primary"
                   )}
-                  title={`${toDateStr(d)} · ${status}`}
                 >
-                  <span className="text-[10px]">{WEEK_LABELS[d.getDay()]}</span>
                   <span className="font-semibold">{format(d, "d")}</span>
+                  {info && (
+                    <span className="mt-0.5 text-[9px] leading-tight">{info.firstTime} {info.count}건</span>
+                  )}
                 </div>
               );
             })}
