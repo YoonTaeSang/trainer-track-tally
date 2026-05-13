@@ -64,6 +64,7 @@ export function MonthTimeline({ onDateSelect }: { onDateSelect?: (date: Date) =>
   const { role } = useRole();
   const { trainerId: currentTrainerId } = useCurrentTrainer();
   const isAdmin = role === "admin";
+  const isTrainer = role === "trainer";
 
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<Date>(new Date());
