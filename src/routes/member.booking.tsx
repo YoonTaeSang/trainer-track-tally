@@ -173,9 +173,19 @@ function MyScheduleMemberPage() {
           return;
         }
         const set = new Set<string>();
+        // PT 한 회기 = 1시간이므로 시작 시간 + 30분 후 슬롯까지 차단
         (data ?? []).forEach((row: any) => {
           if (row.schedule_id === changing.id) return; // 본인이 변경 중인 일정은 제외
-          set.add(String(row.time).slice(0, 5));
+          const start = String(row.time).slice(0, 5);
+          set.add(start);
+          const [h, m] = start.split(":").map(Number);
+          let nh = h;
+          let nm = m + 30;
+          if (nm >= 60) {
+            nh += 1;
+            nm -= 60;
+          }
+          set.add(`${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`);
         });
         console.log("[booking] busy times for", reqDate, ":", Array.from(set));
         setBusyTimes(set);
