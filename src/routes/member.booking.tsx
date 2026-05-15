@@ -27,7 +27,7 @@ import {
 } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useSchedules, usePublicTrainers, type Schedule } from "@/lib/store";
+import { useMembers, useSchedules, usePublicTrainers, refetchAllTables, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -139,6 +139,8 @@ function MyScheduleMemberPage() {
   useEffect(() => {
     if (!changing || !myTrainer) return;
     console.log("[booking] dialog open, trainer:", { id: myTrainer.id, name: myTrainer.name });
+    // 다이얼로그 열릴 때 schedules도 최신화 (다른 회원의 새 일정 반영)
+    refetchAllTables();
     Promise.all([fetchAvailability(myTrainer.id), fetchTimeOff(myTrainer.id)])
       .then(([a, t]) => {
         console.log("[booking] availability rows:", a.length, "timeOff rows:", t.length);
@@ -172,6 +174,8 @@ function MyScheduleMemberPage() {
   // Slots for selected change-request date
   const candidateSlots = useMemo(() => {
     if (!changing || !myTrainer) return [];
+    // "10:00:00" / "10:00" 등 다른 형식을 동일한 "HH:MM" 으로 정규화
+    const normalizeTime = (t: string) => t.slice(0, 5);
     const all = slotsFor(myTrainer.id, reqDate, availability, timeOff);
     const trainerMemberIds = new Set(
       members.filter((m) => m.trainerId === myTrainer.id).map((m) => m.id)
@@ -179,9 +183,9 @@ function MyScheduleMemberPage() {
     const taken = new Set(
       schedules
         .filter((s) => s.date === reqDate && trainerMemberIds.has(s.memberId) && s.id !== changing.id)
-        .map((s) => s.time)
+        .map((s) => normalizeTime(s.time))
     );
-    return all.map((slot) => ({ slot, taken: taken.has(slot) }));
+    return all.map((slot) => ({ slot, taken: taken.has(normalizeTime(slot)) }));
   }, [changing, myTrainer, reqDate, availability, timeOff, members, schedules]);
 
   const openChange = (s: Schedule) => {
@@ -454,20 +458,25 @@ function MyScheduleMemberPage() {
                           key={slot}
                           type="button"
                           disabled={taken}
-                          onClick={() => setReqTime(slot)}
+                          aria-disabled={taken}
+                          onClick={() => {
+                            if (taken) return;
+                            setReqTime(slot);
+                          }}
                           className={cn(
-                            "rounded-md border px-1 py-1 text-[13px] tabular-nums transition",
-                            active &&
+                            "flex flex-col items-center justify-center rounded-md border px-1 py-1 text-[13px] tabular-nums transition",
+                            taken &&
+                              "cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60 line-through",
+                            !taken &&
+                              active &&
                               "border-primary bg-primary text-primary-foreground",
-                            !active &&
-                              taken &&
-                              "cursor-not-allowed border-border bg-muted text-muted-foreground line-through",
-                            !active &&
-                              !taken &&
+                            !taken &&
+                              !active &&
                               "border-border bg-background hover:bg-accent"
                           )}
                         >
-                          {slot}
+                          <span>{slot}</span>
+                          {taken && <span className="text-[9px] no-underline">예약됨</span>}
                         </button>
                       );
                     })}
