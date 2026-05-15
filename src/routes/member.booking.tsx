@@ -73,6 +73,7 @@ function MyScheduleMemberPage() {
   const [reqDate, setReqDate] = useState<string>(toDateStr(new Date()));
   const [reqTime, setReqTime] = useState<string | null>(null);
   const [reqMessage, setReqMessage] = useState<string>("");
+  const [busyTimes, setBusyTimes] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [dlgMonth, setDlgMonth] = useState<Date>(() => startOfMonth(new Date()));
 
@@ -139,7 +140,6 @@ function MyScheduleMemberPage() {
   useEffect(() => {
     if (!changing || !myTrainer) return;
     console.log("[booking] dialog open, trainer:", { id: myTrainer.id, name: myTrainer.name });
-    // 다이얼로그 열릴 때 schedules도 최신화 (다른 회원의 새 일정 반영)
     refetchAllTables();
     Promise.all([fetchAvailability(myTrainer.id), fetchTimeOff(myTrainer.id)])
       .then(([a, t]) => {
@@ -152,6 +152,38 @@ function MyScheduleMemberPage() {
         toast.error(e instanceof Error ? e.message : "가용 시간 조회 실패");
       });
   }, [changing, myTrainer]);
+
+  // 트레이너의 예약된 시간 (다른 회원 포함) — RLS 우회 뷰에서 직접 조회
+  useEffect(() => {
+    if (!changing || !myTrainer) {
+      setBusyTimes(new Set());
+      return;
+    }
+    let cancelled = false;
+    (supabase as any)
+      .from("trainer_schedule_times")
+      .select("schedule_id, time")
+      .eq("trainer_id", myTrainer.id)
+      .eq("date", reqDate)
+      .then(({ data, error }: any) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("[booking] busy times error:", error);
+          setBusyTimes(new Set());
+          return;
+        }
+        const set = new Set<string>();
+        (data ?? []).forEach((row: any) => {
+          if (row.schedule_id === changing.id) return; // 본인이 변경 중인 일정은 제외
+          set.add(String(row.time).slice(0, 5));
+        });
+        console.log("[booking] busy times for", reqDate, ":", Array.from(set));
+        setBusyTimes(set);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [changing, myTrainer, reqDate]);
 
   const myUpcomingSchedules = useMemo(() => {
     if (!myMember) return [];
@@ -213,27 +245,13 @@ function MyScheduleMemberPage() {
         );
       });
 
-    // 다른 회원 PT 예약
-    const trainerMemberIds = new Set(
-      members.filter((m) => m.trainerId === myTrainer.id).map((m) => m.id)
-    );
-    const taken = new Set(
-      schedules
-        .filter(
-          (s) =>
-            s.date === reqDate &&
-            trainerMemberIds.has(s.memberId) &&
-            s.id !== changing.id
-        )
-        .map((s) => normalizeTime(s.time))
-    );
-
+    // busyTimes: RLS 우회 뷰(trainer_schedule_times)에서 미리 받아둔 예약 시간 집합
     return all.map((slot) => ({
       slot,
-      taken: taken.has(normalizeTime(slot)),
+      taken: busyTimes.has(normalizeTime(slot)),
       blocked: blockedSet.has(slot),
     }));
-  }, [changing, myTrainer, reqDate, availability, timeOff, members, schedules]);
+  }, [changing, myTrainer, reqDate, availability, timeOff, busyTimes]);
 
   const openChange = (s: Schedule) => {
     if (!isAtLeastOneDayAhead(s.date, s.time)) {
@@ -512,7 +530,7 @@ function MyScheduleMemberPage() {
                             setReqTime(slot);
                           }}
                           className={cn(
-                            "flex flex-col items-center justify-center rounded-md border px-1 py-1 text-[13px] tabular-nums transition",
+                            "rounded-md border px-1 py-1 text-[13px] tabular-nums transition",
                             disabled &&
                               "cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60 line-through",
                             !disabled &&
@@ -523,9 +541,7 @@ function MyScheduleMemberPage() {
                               "border-border bg-background hover:bg-accent"
                           )}
                         >
-                          <span>{slot}</span>
-                          {taken && <span className="text-[9px] no-underline">예약됨</span>}
-                          {blocked && !taken && <span className="text-[9px] no-underline">불가</span>}
+                          {slot}
                         </button>
                       );
                     })}
