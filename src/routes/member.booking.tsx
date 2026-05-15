@@ -31,9 +31,9 @@ import { useMembers, useSchedules, usePublicTrainers, refetchAllTables, type Sch
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
+  expandSlots,
   fetchAvailability,
   fetchTimeOff,
-  slotsFor,
   toDateStr,
   type Availability,
   type TimeOff,
@@ -171,21 +171,68 @@ function MyScheduleMemberPage() {
     return m;
   }, [requests]);
 
-  // Slots for selected change-request date
+  // Slots for selected change-request date — 예약/예약 불가 슬롯도 모두 표시하되 별도 플래그
   const candidateSlots = useMemo(() => {
     if (!changing || !myTrainer) return [];
-    // "10:00:00" / "10:00" 등 다른 형식을 동일한 "HH:MM" 으로 정규화
     const normalizeTime = (t: string) => t.slice(0, 5);
-    const all = slotsFor(myTrainer.id, reqDate, availability, timeOff);
+
+    // 종일 휴무: 슬롯 자체를 비움 (별도 안내문 노출)
+    const wholeOff = timeOff.find(
+      (t) =>
+        t.trainer_id === myTrainer.id &&
+        t.date === reqDate &&
+        !t.start_time &&
+        !t.end_time
+    );
+    if (wholeOff) return [];
+
+    // 가용 시간 슬롯 (예약 불가 차감 X — 전체 후보 슬롯)
+    const wd = new Date(`${reqDate}T00:00:00`).getDay();
+    const availRows = availability.filter(
+      (a) =>
+        a.trainer_id === myTrainer.id &&
+        ((a.specific_date == null && a.weekday === wd) || a.specific_date === reqDate)
+    );
+    const allSet = new Set<string>();
+    availRows.forEach((r) => expandSlots(r.start_time, r.end_time).forEach((s) => allSet.add(s)));
+    const all = Array.from(allSet).sort();
+
+    // 슬롯 단위 예약 불가
+    const blockedSet = new Set<string>();
+    timeOff
+      .filter(
+        (t) =>
+          t.trainer_id === myTrainer.id &&
+          t.date === reqDate &&
+          t.start_time &&
+          t.end_time
+      )
+      .forEach((t) => {
+        expandSlots(t.start_time as string, t.end_time as string).forEach((s) =>
+          blockedSet.add(s)
+        );
+      });
+
+    // 다른 회원 PT 예약
     const trainerMemberIds = new Set(
       members.filter((m) => m.trainerId === myTrainer.id).map((m) => m.id)
     );
     const taken = new Set(
       schedules
-        .filter((s) => s.date === reqDate && trainerMemberIds.has(s.memberId) && s.id !== changing.id)
+        .filter(
+          (s) =>
+            s.date === reqDate &&
+            trainerMemberIds.has(s.memberId) &&
+            s.id !== changing.id
+        )
         .map((s) => normalizeTime(s.time))
     );
-    return all.map((slot) => ({ slot, taken: taken.has(normalizeTime(slot)) }));
+
+    return all.map((slot) => ({
+      slot,
+      taken: taken.has(normalizeTime(slot)),
+      blocked: blockedSet.has(slot),
+    }));
   }, [changing, myTrainer, reqDate, availability, timeOff, members, schedules]);
 
   const openChange = (s: Schedule) => {
@@ -451,32 +498,34 @@ function MyScheduleMemberPage() {
                   </p>
                 ) : (
                   <div className="mt-1 grid max-h-60 grid-cols-4 gap-1 overflow-y-auto p-0.5">
-                    {candidateSlots.map(({ slot, taken }) => {
+                    {candidateSlots.map(({ slot, taken, blocked }) => {
                       const active = reqTime === slot;
+                      const disabled = taken || blocked;
                       return (
                         <button
                           key={slot}
                           type="button"
-                          disabled={taken}
-                          aria-disabled={taken}
+                          disabled={disabled}
+                          aria-disabled={disabled}
                           onClick={() => {
-                            if (taken) return;
+                            if (disabled) return;
                             setReqTime(slot);
                           }}
                           className={cn(
                             "flex flex-col items-center justify-center rounded-md border px-1 py-1 text-[13px] tabular-nums transition",
-                            taken &&
+                            disabled &&
                               "cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60 line-through",
-                            !taken &&
+                            !disabled &&
                               active &&
                               "border-primary bg-primary text-primary-foreground",
-                            !taken &&
+                            !disabled &&
                               !active &&
                               "border-border bg-background hover:bg-accent"
                           )}
                         >
                           <span>{slot}</span>
                           {taken && <span className="text-[9px] no-underline">예약됨</span>}
+                          {blocked && !taken && <span className="text-[9px] no-underline">불가</span>}
                         </button>
                       );
                     })}
