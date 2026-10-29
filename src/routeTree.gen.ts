@@ -9,43 +9,37 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as MemberRouteImport } from './routes/member'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as MemberIndexRouteImport } from './routes/member.index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MemberRouteImport } from './routes/member'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as MemberRecordsRouteImport } from './routes/member.records'
-import { Route as MemberProfileRouteImport } from './routes/member.profile'
-import { Route as MemberMessagesRouteImport } from './routes/member.messages'
-import { Route as MemberHomeRouteImport } from './routes/member.home'
-import { Route as MemberExercisesRouteImport } from './routes/member.exercises'
-import { Route as MemberBookingRouteImport } from './routes/member.booking'
-import { Route as AppMembersRouteImport } from './routes/_app/members'
-import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
+import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
+import { Route as AppMembersRouteImport } from './routes/_app/members'
+import { Route as MemberIndexRouteImport } from './routes/member.index'
+import { Route as MemberBookingRouteImport } from './routes/member.booking'
+import { Route as MemberExercisesRouteImport } from './routes/member.exercises'
+import { Route as MemberHomeRouteImport } from './routes/member.home'
+import { Route as MemberMessagesRouteImport } from './routes/member.messages'
+import { Route as MemberProfileRouteImport } from './routes/member.profile'
+import { Route as MemberRecordsRouteImport } from './routes/member.records'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
-import { Route as MemberExercisesExerciseIdRouteImport } from './routes/member.exercises.$exerciseId'
-import { Route as AppMembersMemberIdRouteImport } from './routes/_app/members.$memberId'
-import { Route as AppAdminWorkoutsRouteImport } from './routes/_app/admin.workouts'
-import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
-import { Route as AppAdminStatsRouteImport } from './routes/_app/admin.stats'
-import { Route as AppAdminRequestsRouteImport } from './routes/_app/admin.requests'
-import { Route as AppAdminNoticeRouteImport } from './routes/_app/admin.notice'
-import { Route as AppAdminMyScheduleRouteImport } from './routes/_app/admin.my-schedule'
-import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
-import { Route as AppAdminExercisesRouteImport } from './routes/_app/admin.exercises'
 import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin.approvals'
+import { Route as AppAdminExercisesRouteImport } from './routes/_app/admin.exercises'
+import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
+import { Route as AppAdminMyScheduleRouteImport } from './routes/_app/admin.my-schedule'
+import { Route as AppAdminNoticeRouteImport } from './routes/_app/admin.notice'
+import { Route as AppAdminRequestsRouteImport } from './routes/_app/admin.requests'
+import { Route as AppAdminStatsRouteImport } from './routes/_app/admin.stats'
+import { Route as AppAdminTrainersRouteImport } from './routes/_app/admin.trainers'
+import { Route as AppAdminWorkoutsRouteImport } from './routes/_app/admin.workouts'
+import { Route as AppMembersMemberIdRouteImport } from './routes/_app/members.$memberId'
+import { Route as MemberExercisesExerciseIdRouteImport } from './routes/member.exercises.$exerciseId'
 import { Route as AppAdminTrainersTrainerIdRouteImport } from './routes/_app/admin.trainers.$trainerId'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemberRoute = MemberRouteImport.update({
-  id: '/member',
-  path: '/member',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -53,58 +47,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const MemberRoute = MemberRouteImport.update({
+  id: '/member',
+  path: '/member',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MemberIndexRoute = MemberIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MemberRoute,
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
-} as any)
-const MemberRecordsRoute = MemberRecordsRouteImport.update({
-  id: '/records',
-  path: '/records',
-  getParentRoute: () => MemberRoute,
-} as any)
-const MemberProfileRoute = MemberProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => MemberRoute,
-} as any)
-const MemberMessagesRoute = MemberMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => MemberRoute,
-} as any)
-const MemberHomeRoute = MemberHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => MemberRoute,
-} as any)
-const MemberExercisesRoute = MemberExercisesRouteImport.update({
-  id: '/exercises',
-  path: '/exercises',
-  getParentRoute: () => MemberRoute,
-} as any)
-const MemberBookingRoute = MemberBookingRouteImport.update({
-  id: '/booking',
-  path: '/booking',
-  getParentRoute: () => MemberRoute,
-} as any)
-const AppMembersRoute = AppMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCalendarRoute = AppCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
@@ -112,60 +67,54 @@ const AppAttendanceRoute = AppAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMembersRoute = AppMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AppRoute,
+} as any)
+const MemberIndexRoute = MemberIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberBookingRoute = MemberBookingRouteImport.update({
+  id: '/booking',
+  path: '/booking',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberExercisesRoute = MemberExercisesRouteImport.update({
+  id: '/exercises',
+  path: '/exercises',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberHomeRoute = MemberHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberMessagesRoute = MemberMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberProfileRoute = MemberProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => MemberRoute,
+} as any)
+const MemberRecordsRoute = MemberRecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
+  getParentRoute: () => MemberRoute,
+} as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
-  getParentRoute: () => AppRoute,
-} as any)
-const MemberExercisesExerciseIdRoute =
-  MemberExercisesExerciseIdRouteImport.update({
-    id: '/$exerciseId',
-    path: '/$exerciseId',
-    getParentRoute: () => MemberExercisesRoute,
-  } as any)
-const AppMembersMemberIdRoute = AppMembersMemberIdRouteImport.update({
-  id: '/$memberId',
-  path: '/$memberId',
-  getParentRoute: () => AppMembersRoute,
-} as any)
-const AppAdminWorkoutsRoute = AppAdminWorkoutsRouteImport.update({
-  id: '/admin/workouts',
-  path: '/admin/workouts',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminTrainersRoute = AppAdminTrainersRouteImport.update({
-  id: '/admin/trainers',
-  path: '/admin/trainers',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminStatsRoute = AppAdminStatsRouteImport.update({
-  id: '/admin/stats',
-  path: '/admin/stats',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminRequestsRoute = AppAdminRequestsRouteImport.update({
-  id: '/admin/requests',
-  path: '/admin/requests',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminNoticeRoute = AppAdminNoticeRouteImport.update({
-  id: '/admin/notice',
-  path: '/admin/notice',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminMyScheduleRoute = AppAdminMyScheduleRouteImport.update({
-  id: '/admin/my-schedule',
-  path: '/admin/my-schedule',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
-  id: '/admin/messages',
-  path: '/admin/messages',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminExercisesRoute = AppAdminExercisesRouteImport.update({
-  id: '/admin/exercises',
-  path: '/admin/exercises',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
@@ -173,6 +122,57 @@ const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
   path: '/admin/approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminExercisesRoute = AppAdminExercisesRouteImport.update({
+  id: '/admin/exercises',
+  path: '/admin/exercises',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
+  id: '/admin/messages',
+  path: '/admin/messages',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminMyScheduleRoute = AppAdminMyScheduleRouteImport.update({
+  id: '/admin/my-schedule',
+  path: '/admin/my-schedule',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminNoticeRoute = AppAdminNoticeRouteImport.update({
+  id: '/admin/notice',
+  path: '/admin/notice',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRequestsRoute = AppAdminRequestsRouteImport.update({
+  id: '/admin/requests',
+  path: '/admin/requests',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminStatsRoute = AppAdminStatsRouteImport.update({
+  id: '/admin/stats',
+  path: '/admin/stats',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminTrainersRoute = AppAdminTrainersRouteImport.update({
+  id: '/admin/trainers',
+  path: '/admin/trainers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminWorkoutsRoute = AppAdminWorkoutsRouteImport.update({
+  id: '/admin/workouts',
+  path: '/admin/workouts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMembersMemberIdRoute = AppMembersMemberIdRouteImport.update({
+  id: '/$memberId',
+  path: '/$memberId',
+  getParentRoute: () => AppMembersRoute,
+} as any)
+const MemberExercisesExerciseIdRoute =
+  MemberExercisesExerciseIdRouteImport.update({
+    id: '/$exerciseId',
+    path: '/$exerciseId',
+    getParentRoute: () => MemberExercisesRoute,
+  } as any)
 const AppAdminTrainersTrainerIdRoute =
   AppAdminTrainersTrainerIdRouteImport.update({
     id: '/$trainerId',
@@ -367,18 +367,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/member': {
-      id: '/member'
-      path: '/member'
-      fullPath: '/member'
-      preLoaderRoute: typeof MemberRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -388,81 +381,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/member': {
+      id: '/member'
+      path: '/member'
+      fullPath: '/member'
+      preLoaderRoute: typeof MemberRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/member/': {
-      id: '/member/'
-      path: '/'
-      fullPath: '/member/'
-      preLoaderRoute: typeof MemberIndexRouteImport
-      parentRoute: typeof MemberRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/': {
       id: '/_app/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/member/records': {
-      id: '/member/records'
-      path: '/records'
-      fullPath: '/member/records'
-      preLoaderRoute: typeof MemberRecordsRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/member/profile': {
-      id: '/member/profile'
-      path: '/profile'
-      fullPath: '/member/profile'
-      preLoaderRoute: typeof MemberProfileRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/member/messages': {
-      id: '/member/messages'
-      path: '/messages'
-      fullPath: '/member/messages'
-      preLoaderRoute: typeof MemberMessagesRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/member/home': {
-      id: '/member/home'
-      path: '/home'
-      fullPath: '/member/home'
-      preLoaderRoute: typeof MemberHomeRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/member/exercises': {
-      id: '/member/exercises'
-      path: '/exercises'
-      fullPath: '/member/exercises'
-      preLoaderRoute: typeof MemberExercisesRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/member/booking': {
-      id: '/member/booking'
-      path: '/booking'
-      fullPath: '/member/booking'
-      preLoaderRoute: typeof MemberBookingRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/_app/members': {
-      id: '/_app/members'
-      path: '/members'
-      fullPath: '/members'
-      preLoaderRoute: typeof AppMembersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/calendar': {
-      id: '/_app/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/attendance': {
@@ -472,6 +409,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/members': {
+      id: '/_app/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof AppMembersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/member/': {
+      id: '/member/'
+      path: '/'
+      fullPath: '/member/'
+      preLoaderRoute: typeof MemberIndexRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/booking': {
+      id: '/member/booking'
+      path: '/booking'
+      fullPath: '/member/booking'
+      preLoaderRoute: typeof MemberBookingRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/exercises': {
+      id: '/member/exercises'
+      path: '/exercises'
+      fullPath: '/member/exercises'
+      preLoaderRoute: typeof MemberExercisesRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/home': {
+      id: '/member/home'
+      path: '/home'
+      fullPath: '/member/home'
+      preLoaderRoute: typeof MemberHomeRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/messages': {
+      id: '/member/messages'
+      path: '/messages'
+      fullPath: '/member/messages'
+      preLoaderRoute: typeof MemberMessagesRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/profile': {
+      id: '/member/profile'
+      path: '/profile'
+      fullPath: '/member/profile'
+      preLoaderRoute: typeof MemberProfileRouteImport
+      parentRoute: typeof MemberRoute
+    }
+    '/member/records': {
+      id: '/member/records'
+      path: '/records'
+      fullPath: '/member/records'
+      preLoaderRoute: typeof MemberRecordsRouteImport
+      parentRoute: typeof MemberRoute
+    }
     '/_app/admin/': {
       id: '/_app/admin/'
       path: '/admin'
@@ -479,67 +479,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/member/exercises/$exerciseId': {
-      id: '/member/exercises/$exerciseId'
-      path: '/$exerciseId'
-      fullPath: '/member/exercises/$exerciseId'
-      preLoaderRoute: typeof MemberExercisesExerciseIdRouteImport
-      parentRoute: typeof MemberExercisesRoute
-    }
-    '/_app/members/$memberId': {
-      id: '/_app/members/$memberId'
-      path: '/$memberId'
-      fullPath: '/members/$memberId'
-      preLoaderRoute: typeof AppMembersMemberIdRouteImport
-      parentRoute: typeof AppMembersRoute
-    }
-    '/_app/admin/workouts': {
-      id: '/_app/admin/workouts'
-      path: '/admin/workouts'
-      fullPath: '/admin/workouts'
-      preLoaderRoute: typeof AppAdminWorkoutsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/trainers': {
-      id: '/_app/admin/trainers'
-      path: '/admin/trainers'
-      fullPath: '/admin/trainers'
-      preLoaderRoute: typeof AppAdminTrainersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/stats': {
-      id: '/_app/admin/stats'
-      path: '/admin/stats'
-      fullPath: '/admin/stats'
-      preLoaderRoute: typeof AppAdminStatsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/requests': {
-      id: '/_app/admin/requests'
-      path: '/admin/requests'
-      fullPath: '/admin/requests'
-      preLoaderRoute: typeof AppAdminRequestsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/notice': {
-      id: '/_app/admin/notice'
-      path: '/admin/notice'
-      fullPath: '/admin/notice'
-      preLoaderRoute: typeof AppAdminNoticeRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/my-schedule': {
-      id: '/_app/admin/my-schedule'
-      path: '/admin/my-schedule'
-      fullPath: '/admin/my-schedule'
-      preLoaderRoute: typeof AppAdminMyScheduleRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/messages': {
-      id: '/_app/admin/messages'
-      path: '/admin/messages'
-      fullPath: '/admin/messages'
-      preLoaderRoute: typeof AppAdminMessagesRouteImport
+    '/_app/admin/approvals': {
+      id: '/_app/admin/approvals'
+      path: '/admin/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AppAdminApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/exercises': {
@@ -549,12 +493,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminExercisesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/approvals': {
-      id: '/_app/admin/approvals'
-      path: '/admin/approvals'
-      fullPath: '/admin/approvals'
-      preLoaderRoute: typeof AppAdminApprovalsRouteImport
+    '/_app/admin/messages': {
+      id: '/_app/admin/messages'
+      path: '/admin/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AppAdminMessagesRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/admin/my-schedule': {
+      id: '/_app/admin/my-schedule'
+      path: '/admin/my-schedule'
+      fullPath: '/admin/my-schedule'
+      preLoaderRoute: typeof AppAdminMyScheduleRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/notice': {
+      id: '/_app/admin/notice'
+      path: '/admin/notice'
+      fullPath: '/admin/notice'
+      preLoaderRoute: typeof AppAdminNoticeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/requests': {
+      id: '/_app/admin/requests'
+      path: '/admin/requests'
+      fullPath: '/admin/requests'
+      preLoaderRoute: typeof AppAdminRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/stats': {
+      id: '/_app/admin/stats'
+      path: '/admin/stats'
+      fullPath: '/admin/stats'
+      preLoaderRoute: typeof AppAdminStatsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/trainers': {
+      id: '/_app/admin/trainers'
+      path: '/admin/trainers'
+      fullPath: '/admin/trainers'
+      preLoaderRoute: typeof AppAdminTrainersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/workouts': {
+      id: '/_app/admin/workouts'
+      path: '/admin/workouts'
+      fullPath: '/admin/workouts'
+      preLoaderRoute: typeof AppAdminWorkoutsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/members/$memberId': {
+      id: '/_app/members/$memberId'
+      path: '/$memberId'
+      fullPath: '/members/$memberId'
+      preLoaderRoute: typeof AppMembersMemberIdRouteImport
+      parentRoute: typeof AppMembersRoute
+    }
+    '/member/exercises/$exerciseId': {
+      id: '/member/exercises/$exerciseId'
+      path: '/$exerciseId'
+      fullPath: '/member/exercises/$exerciseId'
+      preLoaderRoute: typeof MemberExercisesExerciseIdRouteImport
+      parentRoute: typeof MemberExercisesRoute
     }
     '/_app/admin/trainers/$trainerId': {
       id: '/_app/admin/trainers/$trainerId'
