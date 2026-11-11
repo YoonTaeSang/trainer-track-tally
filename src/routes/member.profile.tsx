@@ -42,10 +42,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { GoalsSection } from "@/components/goals-section";
+import { resolveMemberIdentity } from "@/lib/member-identity";
 
 export const Route = createFileRoute("/member/profile")({
   component: MemberProfile,
-  head: () => ({ meta: [{ title: "내정보 | PT Studio" }] }),
+  head: () => ({ meta: [
+    { title: "내정보 | PT Studio" },
+    { name: "description", content: "PT Studio 회원 프로필과 신체 정보, 목표를 확인하세요." },
+    { property: "og:title", content: "내정보 | PT Studio" },
+    { property: "og:description", content: "회원 프로필과 신체 정보, 목표 관리." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 type Metric = {
@@ -135,10 +143,8 @@ function MemberProfile() {
   }, [user]);
 
 
-  const myMember = useMemo(
-    () => (name ? members.find((m) => m.name === name) : undefined),
-    [members, name]
-  );
+  const identity = resolveMemberIdentity(members, user?.id, { name, phone });
+  const myMember = identity.member;
   const trainer = trainers.find((t) => t.id === myMember?.trainerId);
 
   const addMetric = async () => {
@@ -215,9 +221,9 @@ function MemberProfile() {
               <UserIcon className="h-5 w-5" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-base font-semibold">{name || "회원"}</p>
+              <p className="text-base font-semibold">{identity.name || "회원"}</p>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
-              {phone && <p className="text-xs text-muted-foreground">{phone}</p>}
+              {identity.phone && <p className="text-xs text-muted-foreground">{identity.phone}</p>}
               {createdAt && (
                 <p className="text-xs text-muted-foreground">
                   가입일: {createdAt.slice(0, 10)}

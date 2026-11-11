@@ -9,10 +9,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMembers, useSchedules, usePublicTrainers, refetchAllTables, type Schedule } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { SignatureDialog } from "@/components/signature-dialog";
+import { resolveMemberIdentity } from "@/lib/member-identity";
 
 export const Route = createFileRoute("/member/home")({
   component: MemberHome,
-  head: () => ({ meta: [{ title: "홈 | PT Studio" }] }),
+  head: () => ({ meta: [
+    { title: "회원 홈 | PT Studio" },
+    { name: "description", content: "PT Studio의 내 PT 일정, 잔여 세션과 공지사항을 확인하세요." },
+    { property: "og:title", content: "회원 홈 | PT Studio" },
+    { property: "og:description", content: "내 PT 일정, 잔여 세션과 공지사항." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 type NoticeRow = {
@@ -98,16 +106,8 @@ function MemberHome() {
   };
 
 
-  const myMember = useMemo(() => {
-    if (user?.id) {
-      const byUserId = members.find((m) => m.userId === user.id);
-      if (byUserId) return byUserId;
-    }
-    if (profileName) {
-      return members.find((m) => m.name === profileName) ?? null;
-    }
-    return null;
-  }, [members, profileName, user]);
+  const identity = resolveMemberIdentity(members, user?.id, { name: profileName, phone: "" });
+  const myMember = identity.member;
 
   const myTrainer = useMemo(() => {
     if (!myMember?.trainerId) return null;
@@ -158,7 +158,7 @@ function MemberHome() {
   for (let i = 0; i < firstDow; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  const greetingName = profileName || myMember?.name || "회원";
+  const greetingName = identity.name || "회원";
 
   return (
     <div className="space-y-4">
